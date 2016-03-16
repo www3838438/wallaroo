@@ -3,14 +3,59 @@ debug: true
 branches:
   - master
   - refs/tags/*
+  - nightly_ponyc
 
 clone:
   tags: true
 
 build:
-  main_build:
-    image: dipinhora/ponyc:sendence-1.0.1-$$PONYC_CONFIG-$$PONYC_VERSION
+  build_start:
+    image: dipinhora/ponyc-builder:0.0.2
     commands:
+      - 'echo "Build started at: `date`"'
+      - date --date='-1 hour' '+%a %b %d %H:00:00 %Z %Y' > /drone/src/build-start
+  arm_ponyc:
+    image: dipinhora/ponyc-builder:0.0.2
+    commands:
+      - mkdir /drone/src/ponyc
+      - cd /drone/src/ponyc
+      - git clone https://github.com/ponylang/ponyc.git .
+      - git branch
+      - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
+      - git log -n 1
+      - CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ make arch=armv7-a bits=32 config=$$PONYC_CONFIG libponyrt
+      - mv build/$$PONYC_CONFIG/libponyrt.a build/arm-libponyrt.a
+      - cd /drone/src
+      - rm -r /drone/src/ponyc
+    when:
+      matrix:
+        PONYC_VERSION: armhf
+  main_ponyc:
+    image: dipinhora/ponyc-builder:0.0.2
+    commands:
+      - mkdir /drone/src/ponyc
+      - cd /drone/src/ponyc
+      - git clone https://github.com/ponylang/ponyc.git .
+      - git branch
+      - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
+      - git log -n 1
+      - make config=$$PONYC_CONFIG test
+  get_latest_buffy:
+    image: dipinhora/ponyc-builder:0.0.2
+    commands:
+      - git fetch --tags --depth=50 origin +refs/heads/master
+      - git checkout origin/master
+      - git branch
+      - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
+      - git log -n 1
+  main_build:
+    image: dipinhora/ponyc-runner:0.0.1
+    commands:
+      - oldpath=`pwd`
+      - cd /drone/src/ponyc
+      - LLVM_CONFIG=true make config=${PONYC_CONFIG} install
+      - if [ -e build/arm-libponyrt.a ]; then cp build/arm-libponyrt.a /usr/local/lib/pony/lib/libponyrt.a; fi
+      - cd $oldpath
       - make arch=$$PONYC_VERSION in_docker=true
   dagon_test_amd64:
     image: dipinhora/python-runner:0.0.1
@@ -20,6 +65,7 @@ build:
     commands:
       - make test
       - cd dagon && ./dagon.py --test double dagon
+      - 'echo "Build completed at: `date`"'
     when:
       matrix:
         PONYC_VERSION: amd64
@@ -31,224 +77,10 @@ build:
     commands:
       - make test
       - cd dagon && ./dagon.py --test double dagon
+      - 'echo "Build completed at: `date`"'
     when:
       matrix:
         PONYC_VERSION: armhf
-
-publish:
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/spike.$$PONYC_VERSION
-    insecure: true
-    file: spike/Dockerfile
-    context: spike/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/giles-receiver.$$PONYC_VERSION
-    insecure: true
-    file: giles/receiver/Dockerfile
-    context: giles/receiver/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/giles-sender.$$PONYC_VERSION
-    insecure: true
-    file: giles/sender/Dockerfile
-    context: giles/sender/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/buffy.$$PONYC_VERSION
-    insecure: true
-    file: buffy/Dockerfile
-    context: buffy/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/buffy
-    insecure: true
-    file: buffy/Dockerfile
-    context: buffy/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-      matrix:
-        PONYC_VERSION: amd64
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/dagon.$$PONYC_VERSION
-    insecure: true
-    file: dagon/Dockerfile
-    context: dagon/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/dagon
-    insecure: true
-    file: dagon/Dockerfile
-    context: dagon/
-    storage_driver: overlay
-    tag:
-      - $$BRANCH-$$COMMIT-$$PONYC_CONFIG
-    when:
-      event: push
-      matrix:
-        PONYC_VERSION: amd64
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/spike.$$PONYC_VERSION
-    insecure: true
-    file: spike/Dockerfile
-    context: spike/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/giles-receiver.$$PONYC_VERSION
-    insecure: true
-    file: giles/receiver/Dockerfile
-    context: giles/receiver/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/giles-sender.$$PONYC_VERSION
-    insecure: true
-    file: giles/sender/Dockerfile
-    context: giles/sender/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/buffy.$$PONYC_VERSION
-    insecure: true
-    file: buffy/Dockerfile
-    context: buffy/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/buffy
-    insecure: true
-    file: buffy/Dockerfile
-    context: buffy/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/dagon.$$PONYC_VERSION
-    insecure: true
-    file: dagon/Dockerfile
-    context: dagon/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
-
-  docker:
-    registry: docker.sendence.com:5043
-    username: $$DOCKER_USERNAME
-    password: $$DOCKER_PASSWORD
-    email: dipin@sendence.com
-    repo: docker.sendence.com:5043/sendence/dagon
-    insecure: true
-    file: dagon/Dockerfile
-    context: dagon/
-    storage_driver: overlay
-    tag:
-      - $$TAG-$$PONYC_CONFIG
-    when:
-      event: tag
 
 notify:
   slack:
@@ -256,9 +88,9 @@ notify:
     channel: b-drone-ci
     username: drone-ci
     template: >
-      build `#{{ build.number }}` for {{repo.clone_url}} for commit `{{build.commit}}` 
-      in branch `{{build.branch}}` by `@{{build.author}}` with a message ```{{build.message}}``` 
-      finished with a `{{ build.status }}` status.
+      build `#{{ build.number }}` for `nightly` build of {{repo.clone_url}} 
+      `master` against `ponylang/ponyc master` finished with a 
+      `{{ build.status }}` status in `{{ duration build.started_at build.finished_at }}`.
 
 matrix:
   PONYC_CONFIG:
