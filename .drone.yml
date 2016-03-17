@@ -54,7 +54,7 @@ build:
       - oldpath=`pwd`
       - cd /drone/src/ponyc
       - LLVM_CONFIG=true make config=${PONYC_CONFIG} install
-      - if [ -e build/arm-libponyrt.a ]; then cp build/arm-libponyrt.a /usr/local/lib/pony/lib/libponyrt.a; fi
+      - if [ -e build/arm-libponyrt.a ]; then cp build/arm-libponyrt.a /usr/local/lib/libponyrt.a; fi
       - cd $oldpath
       - make arch=$$PONYC_VERSION in_docker=true
   dagon_test_amd64:
