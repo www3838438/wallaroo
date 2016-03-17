@@ -10,12 +10,12 @@ clone:
 
 build:
   build_start:
-    image: dipinhora/ponyc-builder:0.0.2
+    image: sendence/ponyc-builder:0.0.2
     commands:
       - 'echo "Build started at: `date`"'
       - date --date='-1 hour' '+%a %b %d %H:00:00 %Z %Y' > /drone/src/build-start
   arm_ponyc:
-    image: dipinhora/ponyc-builder:0.0.2
+    image: sendence/ponyc-builder:0.0.2
     commands:
       - mkdir /drone/src/ponyc
       - cd /drone/src/ponyc
@@ -31,7 +31,7 @@ build:
       matrix:
         PONYC_VERSION: armhf
   main_ponyc:
-    image: dipinhora/ponyc-builder:0.0.2
+    image: sendence/ponyc-builder:0.0.2
     commands:
       - mkdir /drone/src/ponyc
       - cd /drone/src/ponyc
@@ -41,7 +41,7 @@ build:
       - git log -n 1
       - make config=$$PONYC_CONFIG test
   get_latest_buffy:
-    image: dipinhora/ponyc-builder:0.0.2
+    image: sendence/ponyc-builder:0.0.2
     commands:
       - git fetch --tags --depth=50 origin +refs/heads/master
       - git checkout origin/master
@@ -49,7 +49,7 @@ build:
       - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
       - git log -n 1
   main_build:
-    image: dipinhora/ponyc-runner:0.0.1
+    image: sendence/ponyc-runner:0.0.1
     commands:
       - oldpath=`pwd`
       - cd /drone/src/ponyc
@@ -58,7 +58,7 @@ build:
       - cd $oldpath
       - make arch=$$PONYC_VERSION in_docker=true
   dagon_test_amd64:
-    image: dipinhora/python-runner:0.0.1
+    image: sendence/python-runner:0.0.1
     environment:
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
@@ -70,14 +70,15 @@ build:
       matrix:
         PONYC_VERSION: amd64
   dagon_test_armhf:
-    image: dipinhora/arm-python-runner:0.0.1
+    image: sendence/arm-python-runner:0.0.1
     environment:
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
     commands:
       - make test
-      - cd dagon && ./dagon.py --test double dagon
+      - cd dagon && chrt -f 80 ./dagon.py --test double dagon
       - 'echo "Build completed at: `date`"'
+    privileged: true
     when:
       matrix:
         PONYC_VERSION: armhf
