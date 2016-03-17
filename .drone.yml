@@ -90,7 +90,7 @@ notify:
     template: >
       build `#{{ build.number }}` for `nightly` build of {{repo.clone_url}} 
       `master` against `ponylang/ponyc master` finished with a 
-      `{{ build.status }}` status in `{{ duration build.started_at build.finished_at }}`.
+      `{{ build.status }}` status in {{ duration build.started_at build.finished_at }}
 
 matrix:
   PONYC_CONFIG:
