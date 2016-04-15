@@ -1,19 +1,27 @@
 debug: true
 
+# only build for master, tages and nightly_ponyc
 branches:
   - master
   - refs/tags/*
   - nightly_ponyc
 
+# clone source code with tags
 clone:
   tags: true
 
+# main build steps
 build:
+  # capture build start time
   build_start:
     image: sendence/ponyc-builder:0.0.2
     commands:
       - 'echo "Build started at: `date`"'
-      - date --date='-1 hour' '+%a %b %d %H:00:00 %Z %Y' > /drone/src/build-start
+      - >
+        date --date='-1 hour' '+%a %b %d %H:00:00 %Z %Y' > 
+        /drone/src/build-start
+
+  # build libponyrt.a for arm
   arm_ponyc:
     image: sendence/ponyc-builder:0.0.2
     commands:
@@ -21,15 +29,21 @@ build:
       - cd /drone/src/ponyc
       - git clone https://github.com/ponylang/ponyc.git .
       - git branch
-      - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
+      - >
+        git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 
+        1 | grep commit | awk '{print $2}')
       - git log -n 1
-      - CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ make arch=armv7-a bits=32 config=$$PONYC_CONFIG libponyrt
+      - >
+        CC=arm-linux-gnueabihf-gcc CXX=arm-linux-gnueabihf-g++ make 
+        arch=armv7-a bits=32 config=$$PONYC_CONFIG libponyrt
       - mv build/$$PONYC_CONFIG/libponyrt.a /drone/src/arm-libponyrt.a
       - cd /drone/src
       - rm -r /drone/src/ponyc
     when:
       matrix:
         PONYC_VERSION: armhf
+
+  # build ponyc from ponylang/ponyc master
   main_ponyc:
     image: sendence/ponyc-builder:0.0.2
     commands:
@@ -37,52 +51,87 @@ build:
       - cd /drone/src/ponyc
       - git clone https://github.com/ponylang/ponyc.git .
       - git branch
-      - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
+      - >
+        git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 
+        1 | grep commit | awk '{print $2}')
       - git log -n 1
       - make config=$$PONYC_CONFIG test
+
+  # get master branch of Buffy
   get_latest_buffy:
     image: sendence/ponyc-builder:0.0.2
     commands:
       - git fetch --tags --depth=50 origin +refs/heads/master
       - git checkout origin/master
       - git branch
-      - git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 1 | grep commit | awk '{print $2}')
+      - >
+        git reset --hard $(git log --before="$(cat /drone/src/build-start)" -n 
+        1 | grep commit | awk '{print $2}')
       - git log -n 1
+
+  # build buffy using just compiled ponyc
   main_build:
     image: sendence/ponyc-runner:0.0.1
     commands:
       - oldpath=`pwd`
       - cd /drone/src/ponyc
       - LLVM_CONFIG=true make config=${PONYC_CONFIG} install
-      - if [ -e /drone/src/arm-libponyrt.a ]; then cp /drone/src/arm-libponyrt.a /usr/local/lib/libponyrt.a; fi
+      - >
+        if [ -e /drone/src/arm-libponyrt.a ]; then cp /drone/src/arm-libponyrt.a
+        /usr/local/lib/libponyrt.a; fi
       - cd $oldpath
       - make arch=$$PONYC_VERSION in_docker=true
-  dagon_test_amd64:
-    image: sendence/python-runner:0.0.1
+
+  # run tests
+  main_test:
+    image: sendence/$$PONYC_VERSION-python-runner:0.0.1
+    pull: true
     environment:
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
     commands:
       - make test
-      - cd dagon && ./dagon.py --test double dagon
-      - 'echo "Build completed at: `date`"'
+
+  # build docker images and test dagon (amd64)
+  build_docker_images_dagon_test_amd64:
+    image: sendence/docker-runner:0.0.1
+    pull: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+      - >
+        make clean-docker arch=$$PONYC_VERSION
+        docker_image_version=build-$$BUILD_NUMBER-$$PONYC_CONFIG
+      - >
+        make build-docker arch=$$PONYC_VERSION
+        docker_image_version=build-$$BUILD_NUMBER-$$PONYC_CONFIG
+      - >
+        make dagon-docker-test arch=$$PONYC_VERSION
+        docker_image_version=build-$$BUILD_NUMBER-$$PONYC_CONFIG
+        docker_no_pull=true
+      - >
+        make clean-docker arch=$$PONYC_VERSION
+        docker_image_version=build-$$BUILD_NUMBER-$$PONYC_CONFIG
+    privileged: true
     when:
       matrix:
         PONYC_VERSION: amd64
-  dagon_test_armhf:
-    image: sendence/arm-python-runner:0.0.1
+
+  # run dagon tests (armhf)
+  run_dagon_test_armhf:
+    image: sendence/$$PONYC_VERSION-python-runner:0.0.1
+    pull: true
     environment:
       - LC_ALL=C.UTF-8
       - LANG=C.UTF-8
     commands:
-      - make test
-      - cd dagon && chrt -f 80 ./dagon.py --test double dagon
-      - 'echo "Build completed at: `date`"'
+      - chrt -f 80 make dagon-test arch=$$PONYC_VERSION
     privileged: true
     when:
       matrix:
         PONYC_VERSION: armhf
 
+# send notifications to slack
 notify:
   slack:
     webhook_url: $$SLACK_WEBHOOK
@@ -91,8 +140,10 @@ notify:
     template: >
       build `#{{ build.number }}` for `nightly` build of {{repo.clone_url}} 
       `master` against `ponylang/ponyc master` finished with a 
-      `{{ build.status }}` status in {{ duration build.started_at build.finished_at }}
+      `{{ build.status }}` status in 
+      {{ duration build.started_at build.finished_at }}
 
+# matrix of configurations to test
 matrix:
   PONYC_CONFIG:
     - debug
