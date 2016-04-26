@@ -57,6 +57,18 @@ build:
       - git log -n 1
       - make config=$$PONYC_CONFIG test
 
+  # build pony-stable
+  pony-stable:
+    image: sendence/ponyc-builder:0.0.2
+    commands:
+      - cd /drone/src/ponyc
+      - export PATH=$PATH:$PWD/build/$$PONYC_CONFIG
+      - mkdir -p build/pony-stable
+      - cd build/pony-stable
+      - git clone https://github.com/jemc/pony-stable.git .
+      - git checkout a841221
+      - make
+
   # get master branch of Buffy
   get_latest_buffy:
     image: sendence/ponyc-builder:0.0.2
@@ -79,6 +91,8 @@ build:
       - >
         if [ -e /drone/src/arm-libponyrt.a ]; then cp /drone/src/arm-libponyrt.a
         /usr/local/lib/libponyrt.a; fi
+      - cd build/pony-stable
+      - make install
       - cd $oldpath
       - make arch=$$PONYC_VERSION in_docker=true
 
