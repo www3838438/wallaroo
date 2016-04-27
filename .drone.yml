@@ -83,7 +83,7 @@ build:
 
   # build buffy using just compiled ponyc
   main_build:
-    image: sendence/ponyc-runner:0.0.1
+    image: sendence/ponyc-runner:0.0.2
     commands:
       - oldpath=`pwd`
       - cd /drone/src/ponyc
