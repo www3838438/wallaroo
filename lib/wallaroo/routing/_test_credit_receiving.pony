@@ -15,7 +15,7 @@ actor TestCreditReceiving is TestList
 
 class iso _TestReceiveCreditsBelowMax is UnitTest
   fun name(): String =>
-    "credit-receiving/TestReceiveCreditsBelowMax"
+    "credit-receiving/ReceiveCreditsBelowMax"
 
   fun ref apply(h: TestHelper) =>
     let rl = _RouteLogic(NullTestProducer,
@@ -33,7 +33,7 @@ class iso _TestReceiveCreditsBelowMax is UnitTest
 
 class iso _TestReceiveCreditsCrossingMax is UnitTest
   fun name(): String =>
-    "credit-receiving/TestReceiveCreditsCrossingMax"
+    "credit-receiving/ReceiveCreditsCrossingMax"
 
   fun ref apply(h: TestHelper) =>
     let rl = _RouteLogic(NullTestProducer,
@@ -57,7 +57,7 @@ class iso _TestReceiveCreditsCrossingMax is UnitTest
 
 class iso _TestNotYetReadyRouteInteractions is UnitTest
   fun name(): String =>
-    "credit-receiving/TestNotYetReadyRouteInteractions"
+    "credit-receiving/NotYetReadyRouteInteractions"
 
   fun ref apply(h: TestHelper) =>
     let route = _ANotYetReadyRoute(h)
@@ -69,7 +69,7 @@ class iso _TestNotYetReadyRouteInteractions is UnitTest
 
 class iso _TestReadyRouteWithoutCreditsInteractions is UnitTest
   fun name(): String =>
-    "credit-receiving/TestReadyRouteWithoutCreditsInteractions"
+    "credit-receiving/ReadyRouteWithoutCreditsInteractions"
 
   fun ref apply(h: TestHelper) =>
     let has_credits = false
@@ -84,7 +84,7 @@ class iso _TestReadyRouteWithoutCreditsInteractions is UnitTest
 // This test is not yet expressable with Pony Test.
 class iso _TestReadyRouteWithCreditsInteractions is UnitTest
   fun name(): String =>
-    "credit-receiving/TestReadyRouteWithCreditsInteractions"
+    "credit-receiving/ReadyRouteWithCreditsInteractions"
 
   fun ref apply(h: TestHelper) =>
     let has_credits = true
