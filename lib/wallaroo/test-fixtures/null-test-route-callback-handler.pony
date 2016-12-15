@@ -1,6 +1,6 @@
 use "wallaroo/routing"
 
-class NullRouteCallbackHandler is RouteCallbackHandler
+class NullTestRouteCallbackHandler is RouteCallbackHandler
   fun ref register(producer: Producer ref, r: RouteLogic tag) =>
     None
 

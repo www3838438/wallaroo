@@ -20,7 +20,7 @@ class iso _TestReceiveCreditsBelowMax is UnitTest
   fun ref apply(h: TestHelper) =>
     let rl = _RouteLogic(NullTestProducer,
       ConsumerThatDoesntGetCreditsReturned(h),
-      NullRouteCallbackHandler,
+      NullTestRouteCallbackHandler,
       "",
       50)
 
@@ -38,7 +38,7 @@ class iso _TestReceiveCreditsCrossingMax is UnitTest
   fun ref apply(h: TestHelper) =>
     let rl = _RouteLogic(NullTestProducer,
       ConsumerThatGetsCreditsReturned(h, 20),
-      NullRouteCallbackHandler,
+      NullTestRouteCallbackHandler,
       "",
       50)
 
