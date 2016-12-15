@@ -162,14 +162,14 @@ class _RouteLogic is RouteLogic
   fun ref _request_credits() =>
     if not _request_outstanding then
       ifdef "credit_trace" then
-        @printf[I32]("--BoundaryRoute (%s): requesting credits. Have %llu\n"
+        @printf[I32]("--Route (%s): requesting credits. Have %llu\n"
           .cstring(), _step_type.cstring(), _credits_available)
       end
       _consumer.credit_request(_step)
       _request_outstanding = true
     else
       ifdef "credit_trace" then
-        @printf[I32]("----BoundaryRoute (%s): Request already outstanding\n"
+        @printf[I32]("----Route (%s): Request already outstanding\n"
           .cstring(), _step_type.cstring())
       end
     end
