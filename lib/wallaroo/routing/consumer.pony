@@ -6,4 +6,5 @@ trait tag CreditFlowConsumer
 
 type CreditFlowProducerConsumer is (Producer & CreditFlowConsumer)
 
+// TODO: replace CreditFlowConsumer with this
 type Consumer is CreditFlowConsumer

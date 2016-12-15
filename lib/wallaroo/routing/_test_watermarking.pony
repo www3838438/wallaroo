@@ -1,5 +1,5 @@
 use "ponytest"
-
+use "wallaroo/test-fixtures"
 use "wallaroo/topology"
 
 actor TestWatermarking is TestList
@@ -268,12 +268,12 @@ class iso _TestOutgoingToIncomingIndexFor1 is UnitTest
   fun ref apply(h: TestHelper) =>
     let t = _OutgoingToIncoming
 
-    t.add(SeqId(1), _TestProducer, RouteId(1), SeqId(1))
-    t.add(SeqId(2), _TestProducer, RouteId(1), SeqId(2))
-    t.add(SeqId(3), _TestProducer, RouteId(1), SeqId(3))
-    t.add(SeqId(4), _TestProducer, RouteId(1), SeqId(4))
-    t.add(SeqId(5), _TestProducer, RouteId(1), SeqId(5))
-    t.add(SeqId(6), _TestProducer, RouteId(1), SeqId(6))
+    t.add(SeqId(1), NullTestProducer, RouteId(1), SeqId(1))
+    t.add(SeqId(2), NullTestProducer, RouteId(1), SeqId(2))
+    t.add(SeqId(3), NullTestProducer, RouteId(1), SeqId(3))
+    t.add(SeqId(4), NullTestProducer, RouteId(1), SeqId(4))
+    t.add(SeqId(5), NullTestProducer, RouteId(1), SeqId(5))
+    t.add(SeqId(6), NullTestProducer, RouteId(1), SeqId(6))
 
     try
       h.assert_eq[USize](0, t._index_for(1))
@@ -294,12 +294,12 @@ class iso _TestOutgoingToIncomingIndexFor2 is UnitTest
   fun ref apply(h: TestHelper) =>
     let t = _OutgoingToIncoming
 
-    t.add(SeqId(505), _TestProducer, RouteId(1), SeqId(10))
-    t.add(SeqId(506), _TestProducer, RouteId(1), SeqId(11))
-    t.add(SeqId(507), _TestProducer, RouteId(1), SeqId(12))
-    t.add(SeqId(508), _TestProducer, RouteId(1), SeqId(13))
-    t.add(SeqId(509), _TestProducer, RouteId(1), SeqId(14))
-    t.add(SeqId(510), _TestProducer, RouteId(1), SeqId(15))
+    t.add(SeqId(505), NullTestProducer, RouteId(1), SeqId(10))
+    t.add(SeqId(506), NullTestProducer, RouteId(1), SeqId(11))
+    t.add(SeqId(507), NullTestProducer, RouteId(1), SeqId(12))
+    t.add(SeqId(508), NullTestProducer, RouteId(1), SeqId(13))
+    t.add(SeqId(509), NullTestProducer, RouteId(1), SeqId(14))
+    t.add(SeqId(510), NullTestProducer, RouteId(1), SeqId(15))
 
     try
       h.assert_eq[USize](0, t._index_for(505))
@@ -317,9 +317,9 @@ class iso _TestOriginHighsBelow1 is UnitTest
     "resilience/_TestOriginHighsBelow1"
 
   fun ref apply(h: TestHelper) =>
-    let o1 = _TestProducer
+    let o1 = NullTestProducer
     let o1route = RouteId(1)
-    let o2 = _TestProducer
+    let o2 = NullTestProducer
     let o2route = RouteId(3)
     let t = _OutgoingToIncoming
 
@@ -354,9 +354,9 @@ class iso _TestOriginHighsBelow2 is UnitTest
     "resilience/_TestOriginHighsBelow2"
 
   fun ref apply(h: TestHelper) =>
-    let o1 = _TestProducer
+    let o1 = NullTestProducer
     let o1route = RouteId(1)
-    let o2 = _TestProducer
+    let o2 = NullTestProducer
     let o2route = RouteId(3)
     let t = _OutgoingToIncoming
 
@@ -389,9 +389,9 @@ class iso _TestOutgoingToIncomingEviction is UnitTest
     "resilience/_TestOutgoingToIncomingEviction"
 
   fun ref apply(h: TestHelper) =>
-    let o1 = _TestProducer
+    let o1 = NullTestProducer
     let o1route = RouteId(1)
-    let o2 = _TestProducer
+    let o2 = NullTestProducer
     let o2route = RouteId(3)
     let t = _OutgoingToIncoming
 
@@ -425,9 +425,9 @@ class iso _TestOutgoingToIncomingBadEviction is UnitTest
     "resilience/_TestOutgoingToIncomingBadEviction"
 
   fun ref apply(h: TestHelper) =>
-    let o1 = _TestProducer
+    let o1 = NullTestProducer
     let o1route = RouteId(1)
-    let o2 = _TestProducer
+    let o2 = NullTestProducer
     let o2route = RouteId(3)
     let t = _OutgoingToIncoming
 
@@ -437,22 +437,3 @@ class iso _TestOutgoingToIncomingBadEviction is UnitTest
       t.evict(1)
       h.fail()
     end
-
-actor _TestProducer is Producer
-  be receive_credits(credits: ISize, from: CreditFlowConsumer) =>
-    None
-
-  fun ref recoup_credits(credits: ISize) =>
-    None
-
-  fun ref route_to(c: CreditFlowConsumer): (Route | None) =>
-    None
-
-  fun ref next_sequence_id(): U64 =>
-    0
-
-  fun ref _x_resilience_routes(): Routes =>
-    Routes
-
-  fun ref _flush(low_watermark: SeqId) =>
-    None

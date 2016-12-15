@@ -38,23 +38,24 @@ trait RouteLogic
 
 class _RouteLogic is RouteLogic
   let _step: Producer ref
-  let _consumer: CreditFlowConsumer
+  let _consumer: Consumer
   var _step_type: String = ""
   var _route_type: String = ""
   let _callback: RouteCallbackHandler
-  var _max_credits: ISize = 0 // This is updated on initialize()
+  var _max_credits: ISize
   var _credits_available: ISize = 0
   var _request_more_credits_after: ISize = 0
   var _request_outstanding: Bool = false
   var _credit_receiver: _CreditReceiver
 
-  new create(step: Producer ref, consumer: CreditFlowConsumer,
-    handler: RouteCallbackHandler, r_type: String)
+  new create(step: Producer ref, consumer: Consumer,
+    handler: RouteCallbackHandler, r_type: String, max_credits': ISize = 0)
   =>
     _step = step
     _consumer = consumer
     _callback = handler
     _route_type = r_type
+    _max_credits = max_credits'
     _credit_receiver = _NotYetReadyRoute
 
   fun ref application_initialized(new_max_credits: ISize, step_type: String) =>

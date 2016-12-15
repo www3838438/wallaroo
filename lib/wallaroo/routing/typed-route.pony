@@ -68,16 +68,12 @@ class TypedRoute[In: Any val] is Route
         end
       end
 
+      _send_message_on_route(metric_name, pipeline_time_spent, input, cfp,
+        origin, msg_uid, frac_ids, i_seq_id, i_route_id, latest_ts,
+        metrics_id, worker_ingress_ts)
       ifdef "backpressure" then
-        _send_message_on_route(metric_name, pipeline_time_spent, input, cfp,
-          origin,msg_uid, frac_ids, i_seq_id, i_route_id, latest_ts,
-          metrics_id, worker_ingress_ts)
-
         _route.try_request()
       else
-        _send_message_on_route(metric_name, pipeline_time_spent, input, cfp,
-          origin, msg_uid, frac_ids, i_seq_id, i_route_id, latest_ts,
-          metrics_id, worker_ingress_ts)
         true
       end
     else
