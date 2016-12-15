@@ -77,12 +77,6 @@ class _RouteLogic is RouteLogic
   fun ref register_with_callback() =>
     _callback.register(_step, this)
 
-  fun ref update_max_credits(credits: ISize) =>
-    ifdef debug then
-      Invariant(credits > 0)
-    end
-    _max_credits = credits
-
   fun credits_available(): ISize =>
     _credits_available
 

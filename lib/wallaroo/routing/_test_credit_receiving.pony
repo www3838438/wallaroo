@@ -9,6 +9,13 @@ actor TestCreditReceiving is TestList
     test(_TestReadyRouteWithoutCreditsInteractions)
     //test(_TestReadyRouteWithCreditsInteractions)
 
+class iso _TestReceiveCredits is UnitTest
+  fun name(): String =>
+    "credit-receiving/????"
+
+  fun ref apply(h: TestHelper) =>
+    None
+
 class iso _TestNotYetReadyRouteInteractions is UnitTest
   fun name(): String =>
     "credit-receiving/TestNotYetReadyRouteInteractions"
