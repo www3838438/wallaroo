@@ -25,13 +25,16 @@ trait Route
     worker_ingress_ts: U64): Bool
 
 trait RouteLogic
-  fun ref application_initialized(new_max_credits: ISize, step_type: String)
-  fun ref register_with_callback()
-  fun ref receive_credits(credits: ISize)
   fun credits_available(): ISize
-  fun ref use_credit()
-  fun ref try_request(): Bool
+  fun max_credits(): ISize
+  fun ref _credits_initialized()
+  fun ref _credits_replenished()
+  fun ref register_with_callback()
+  fun ref application_initialized(new_max_credits: ISize, step_type: String)
+  fun ref receive_credits(credits: ISize)
   fun ref dispose()
+  fun ref try_request(): Bool
+  fun ref use_credit()
 
 class _RouteLogic is RouteLogic
   let _step: Producer ref
@@ -90,7 +93,39 @@ class _RouteLogic is RouteLogic
     _max_credits
 
   fun ref receive_credits(credits: ISize) =>
-    _credit_receiver.receive_credits(this, credits)
+     ifdef debug then
+      Invariant(credits > 0)
+    end
+
+    _credit_receiver.preconditions(this, credits)
+
+    let started_from_zero = credits_available() == 0
+    _request_outstanding = false
+
+    let credits_recouped =
+      if (credits_available() + credits) > max_credits() then
+        max_credits() - credits_available()
+      else
+        credits
+      end
+    _recoup_credits(credits_recouped)
+
+    if credits > credits_recouped then
+      _return_credits(credits - credits_recouped)
+    end
+
+    ifdef "credit_trace" then
+      @printf[I32](("-Route (%s): rcvd %llu credits." +
+        " Had %llu out of %llu.\n").cstring(),
+        _credit_receiver.state(),
+        credits, credits_available() - credits_recouped,
+        max_credits())
+    end
+
+    _update_request_more_credits_after(
+      credits_available() - (credits_available() >> 2))
+
+    _credit_receiver.action(this, started_from_zero)
 
   fun ref try_request(): Bool =>
     if _credits_available == 0 then
@@ -148,11 +183,20 @@ class _RouteLogic is RouteLogic
   fun ref _return_credits(credits: ISize) =>
     _consumer.return_credits(credits)
 
-  fun ref _close_outstanding_request() =>
-    _request_outstanding = false
-
 class _EmptyRouteLogic is RouteLogic
-  fun ref application_initialized(new_max_credits: ISize, step_type: String) =>
+  fun credits_available(): ISize =>
+    Fail()
+    0
+
+  fun max_credits(): ISize =>
+    Fail()
+    0
+
+  fun _credits_initialized() =>
+    Fail()
+    None
+
+  fun _credits_replenished() =>
     Fail()
     None
 
@@ -160,15 +204,15 @@ class _EmptyRouteLogic is RouteLogic
     Fail()
     None
 
+  fun ref application_initialized(new_max_credits: ISize, step_type: String) =>
+    Fail()
+    None
+
   fun ref receive_credits(credits: ISize) =>
     Fail()
     None
 
-  fun credits_available(): ISize =>
-    Fail()
-    0
-
-  fun ref use_credit() =>
+  fun ref dispose() =>
     Fail()
     None
 
@@ -176,7 +220,7 @@ class _EmptyRouteLogic is RouteLogic
     Fail()
     true
 
-  fun ref dispose() =>
+  fun ref use_credit() =>
     Fail()
     None
 
