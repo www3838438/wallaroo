@@ -65,7 +65,7 @@ class iso _TestNotYetReadyRouteInteractions is UnitTest
 
     h.expect_action("credits initialized")
     cr.preconditions(route, 5)
-    cr.action(route, false)
+    cr.action(route, true)
 
 class iso _TestReadyRouteWithoutCreditsInteractions is UnitTest
   fun name(): String =>
