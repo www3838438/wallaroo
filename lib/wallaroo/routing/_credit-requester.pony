@@ -1,22 +1,19 @@
 use "wallaroo/invariant"
 
-class _CreditRequester
+class CreditRequester
   let _pool: _CreditPool
-  let _route: RouteLogic
-  var _state: _CreditRequesterState = _UninitializedCreditRequester
+  var _state: CreditRequesterState = _UninitializedCreditRequester
   var _requesting: Bool = false
 
   let _us: Producer ref
   let _consumer: Consumer
 
-  new create(producer: Producer ref, consumer: Consumer,
-    pool: _CreditPool, route: RouteLogic)
-   =>
+  new create(producer: Producer ref, consumer: Consumer, pool: _CreditPool) =>
     _us = producer
     _consumer = consumer
     _pool = pool
-    _route = route
-    pool.register_notify(_PerRouteCreditPoolNotify(_route, this))
+    pool.register_notify(
+      _PerRouteCreditPoolNotify(this, _us, _consumer))
 
   fun ref request() =>
     if not _requesting then
@@ -60,15 +57,16 @@ class _CreditRequester
 
   fun ref _credits_initialized() =>
     _state = _InitializedCreditRequester
-    _route._credits_initialized()
+    _us.credits_initialized()
+    _us.report_route_ready_to_work(this)
 
   fun ref _credits_replenished() =>
-    _route._credits_replenished()
+    _us.credits_replenished()
 
-interface _CreditRequesterState
+interface CreditRequesterState
   fun desc(): String
   fun ref receive_preconditions(pool: _CreditPool)
-  fun ref receive_action(cr: _CreditRequester, was_zero: Bool)
+  fun ref receive_action(cr: CreditRequester, was_zero: Bool)
 
 class _UninitializedCreditRequester
   fun desc(): String =>
@@ -77,7 +75,7 @@ class _UninitializedCreditRequester
   fun ref receive_preconditions(pool: _CreditPool) =>
     Invariant(pool.available() == 0)
 
-  fun ref receive_action(cr: _CreditRequester, was_zero: Bool) =>
+  fun ref receive_action(cr: CreditRequester, was_zero: Bool) =>
     cr._credits_initialized()
 
 class _InitializedCreditRequester
@@ -87,8 +85,7 @@ class _InitializedCreditRequester
   fun ref receive_preconditions(pool: _CreditPool) =>
     None
 
-  fun ref receive_action(cr: _CreditRequester, was_zero: Bool) =>
+  fun ref receive_action(cr: CreditRequester, was_zero: Bool) =>
     if was_zero then
-      @printf[None]("Credits replenished\n".cstring())
       cr._credits_replenished()
     end

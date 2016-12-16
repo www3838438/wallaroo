@@ -16,6 +16,18 @@ class NullTestProducer is Producer
   fun ref recoup_credits(credits: ISize) =>
     None
 
+  fun ref credits_exhausted() =>
+    None
+
+  fun ref credits_initialized() =>
+    None
+
+  fun ref report_route_ready_to_work(r: (CreditRequester | RouteLogic)) =>
+    None
+
+  fun ref credits_replenished() =>
+    None
+
   fun ref route_to(c: Consumer): (Route | None) =>
     None
 

@@ -141,7 +141,7 @@ class _RouteLogic is RouteLogic
     true
 
   fun ref _credits_initialized() =>
-    _callback.credits_initialized(_step, this)
+    _callback.credits_initialized(_step)
     _report_ready_to_work()
 
   fun ref _report_ready_to_work() =>

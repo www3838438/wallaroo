@@ -63,6 +63,9 @@ actor TCPSource is Producer
   // Origin (Resilience)
   var _seq_id: SeqId = 1 // 0 is reserved for "not seen yet"
 
+  let _rcbhandler: TCPSourceRouteCallbackHandler ref =
+    TCPSourceRouteCallbackHandler
+
   new _accept(listen: TCPSourceListener, notify: TCPSourceNotify iso,
     routes: Array[CreditFlowConsumerStep] val, route_builder: RouteBuilder val,
     outgoing_boundaries: Map[String, OutgoingBoundary] val,
@@ -101,24 +104,21 @@ actor TCPSource is Producer
     //listening until we are done recovering
     _notify.accepted(this)
 
-    let handler: TCPSourceRouteCallbackHandler ref =
-      TCPSourceRouteCallbackHandler
-
     for consumer in routes.values() do
       _routes(consumer) =
-        _route_builder(this, consumer, handler, _metrics_reporter)
+        _route_builder(this, consumer, _rcbhandler, _metrics_reporter)
     end
 
     for (worker, boundary) in _outgoing_boundaries.pairs() do
       _routes(boundary) =
-        _route_builder(this, boundary, handler, _metrics_reporter)
+        _route_builder(this, boundary, _rcbhandler, _metrics_reporter)
     end
 
     match default_target
     | let r: CreditFlowConsumerStep =>
       match forward_route_builder
       | let frb: RouteBuilder val =>
-        _routes(r) = frb(this, r, handler, _metrics_reporter)
+        _routes(r) = frb(this, r, _rcbhandler, _metrics_reporter)
       end
     end
 
@@ -558,6 +558,18 @@ actor TCPSource is Producer
       @pony_asio_event_resubscribe(_event, flags)
     end
 
+  fun ref credits_exhausted() =>
+    _rcbhandler.credits_exhausted(this)
+
+  fun ref credits_initialized() =>
+    _rcbhandler.credits_initialized(this)
+
+  fun ref report_route_ready_to_work(r: (CreditRequester | RouteLogic)) =>
+    None
+
+  fun ref credits_replenished() =>
+    _rcbhandler.credits_replenished(this)
+
 class TCPSourceRouteCallbackHandler is RouteCallbackHandler
   let _registered_routes: SetIs[RouteLogic tag] = _registered_routes.create()
   var _muted: ISize = 0
@@ -586,11 +598,7 @@ class TCPSourceRouteCallbackHandler is RouteCallbackHandler
       Fail()
     end
 
-  fun ref credits_initialized(producer: Producer ref, r: RouteLogic tag) =>
-    ifdef debug then
-      Invariant(_registered_routes.contains(r))
-    end
-
+  fun ref credits_initialized(producer: Producer ref) =>
     match producer
     | let s: TCPSource ref =>
       _try_unmute(s)
@@ -604,10 +612,10 @@ class TCPSourceRouteCallbackHandler is RouteCallbackHandler
     match producer
     | let s: TCPSource ref =>
       _try_unmute(s)
-      //ifdef "credit_trace" then
+      ifdef "credit_trace" then
         @printf[I32]("Credits_replenished. Now _muted=%llu\n".cstring(),
           _muted)
-      //end
+      end
     else
       Fail()
     end
@@ -616,10 +624,10 @@ class TCPSourceRouteCallbackHandler is RouteCallbackHandler
     match producer
     | let s: TCPSource ref =>
       _try_mute(s)
-      //ifdef "credit_trace" then
+      ifdef "credit_trace" then
         @printf[I32]("Credits_exhausted. Now _muted=%llu\n".cstring(),
           _muted)
-      //end
+      end
     else
       Fail()
     end

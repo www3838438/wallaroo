@@ -19,7 +19,7 @@ class TypedRoute[In: Any val] is Route
   var _route: RouteLogic = _EmptyRouteLogic
   let _credits: _CreditPool
   let _message_sender: _MessageSender
-  let _credit_requester: _CreditRequester
+  let _credit_requester: CreditRequester
 
   new create(step: Producer ref, consumer: CreditFlowConsumerStep,
     handler: RouteCallbackHandler, metrics_reporter: MetricsReporter ref)
@@ -29,7 +29,7 @@ class TypedRoute[In: Any val] is Route
     _metrics_reporter = metrics_reporter
     _route = _RouteLogic(step, consumer, handler, "Typed")
     _credits = _CreditPool
-    _credit_requester = _CreditRequester(step, consumer, _credits, _route)
+    _credit_requester = CreditRequester(step, consumer, _credits)
     _message_sender = ifdef "backpressure" then
       _BackPressureAwareMessageSender(_credits)
     else

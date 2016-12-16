@@ -1,19 +1,21 @@
 class _PerRouteCreditPoolNotify is _CreditPoolNotify
-  let _route: RouteLogic ref
-  let _cr: _CreditRequester
+  let _r: CreditRequester
+  let _p: Producer ref
+  let _c: Consumer
 
-  new create(r: RouteLogic ref, cr: _CreditRequester) =>
-    _route = r
-    _cr = cr
+  new create(r: CreditRequester, p: Producer ref, c: Consumer) =>
+    _r = r
+    _p = p
+    _c = c
 
   fun ref exhausted(pool: _CreditPool) =>
-    _route._credits_exhausted()
+    _p.credits_exhausted()
 
   fun ref refresh_needed(pool: _CreditPool) =>
-    _cr.request()
+    _r.request()
 
   fun ref collected(pool: _CreditPool, amount: ISize) =>
-    _route._recoup_credits(amount)
+    _p.recoup_credits(amount)
 
   fun ref overflowed(pool: _CreditPool, amount: ISize) =>
-    _route._credits_overflowed(amount)
+    _c.return_credits(amount)

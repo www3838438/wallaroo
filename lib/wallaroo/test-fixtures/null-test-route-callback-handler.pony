@@ -7,7 +7,7 @@ class NullTestRouteCallbackHandler is RouteCallbackHandler
   fun shutdown(p: Producer ref) =>
     None
 
-  fun ref credits_initialized(producer: Producer ref, r: RouteLogic tag) =>
+  fun ref credits_initialized(producer: Producer ref) =>
     None
 
   fun ref credits_replenished(p: Producer ref) =>
