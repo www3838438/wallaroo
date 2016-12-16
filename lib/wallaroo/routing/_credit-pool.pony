@@ -58,6 +58,12 @@ class _CreditPool
       Invariant(n > 0)
     end
 
+    if _available > n then
+      let overflowed = _available - n
+      _notify.overflowed(this, overflowed)
+      _available = n
+      _refresh_at = _n(_available)
+    end
     _max = n
 
   fun tag _n(n: ISize): ISize =>

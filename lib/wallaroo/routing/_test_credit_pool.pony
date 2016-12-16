@@ -17,6 +17,8 @@ actor TestCreditPool is TestList
     test(_TestCantSurpassMax)
     test(_TestSurpassingMaxTriggersCreditReturn)
     test(_TestUpdateMax)
+    test(_TestUpdatingMaxToBelowAvailableOverflows)
+    test(_TestUpdatingMaxToBelowAvailableChangesRefreshAt)
 
 class iso _TestInitialization is UnitTest
   """
@@ -161,6 +163,50 @@ class iso _TestUpdateMax is UnitTest
     h.assert_ne[ISize](new_max, pool.max())
     pool.change_max(new_max)
     h.assert_eq[ISize](new_max, pool.max())
+
+class iso _TestUpdatingMaxToBelowAvailableOverflows is UnitTest
+  """
+  Verify that is we set a new max below currently available credits that
+  we overflow.
+
+  For example:
+
+    max is 10
+    available is 9
+    max is changed to 5
+    new available should be 5
+    4 credits should overflow
+  """
+  fun name(): String =>
+    "credit-pool/UpdatingMaxToBelowAvailableOverflows"
+
+  fun apply(h: TestHelper) =>
+    let pool = _CreditPool(_OverflowCheckingCreditPoolNotify(h, 4), 0, 10)
+
+    h.long_test(1_000_000_000)
+    h.expect_action("overflowed")
+
+    h.assert_eq[ISize](0, pool.available())
+    pool.collect(9)
+    pool.change_max(5)
+    h.assert_eq[ISize](5, pool.available())
+
+class iso _TestUpdatingMaxToBelowAvailableChangesRefreshAt is UnitTest
+  """
+  Verify that when we set the max below the current available
+  and force an update of available that change `refresh_at` value.
+  """
+  fun name(): String =>
+    "credit-pool/UpdatingMaxToBelowAvailableChangesRefreshAt"
+
+  fun apply(h: TestHelper) =>
+    let pool = _CreditPool(_NullCreditPoolNotify, 0, 50)
+
+    pool.collect(40)
+    let before = pool.next_refresh()
+    pool.change_max(5)
+    let after = pool.next_refresh()
+    h.assert_ne[ISize](before, after)
 
 class _NullCreditPoolNotify is _CreditPoolNotify
   fun ref exhausted(pool: _CreditPool) =>
