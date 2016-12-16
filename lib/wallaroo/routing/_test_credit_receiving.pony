@@ -2,6 +2,9 @@ use "ponytest"
 use "wallaroo/test-fixtures"
 
 actor TestCreditReceiving is TestList
+  """
+  Test arounds receiving credits
+  """
   new make() =>
     None
 
@@ -13,6 +16,9 @@ actor TestCreditReceiving is TestList
     //test(_TestReadyRouteWithCreditsInteractions)
 
 class iso _TestReceiveCreditsBelowMax is UnitTest
+  """
+  Verify that receiving credits correctly accumlates
+  """
   fun name(): String =>
     "credit-receiving/ReceiveCreditsBelowMax"
 
@@ -31,6 +37,10 @@ class iso _TestReceiveCreditsBelowMax is UnitTest
     h.assert_eq[ISize](45, rl.credits_available())
 
 class iso _TestReceiveCreditsCrossingMax is UnitTest
+  """
+  Verify that receiving credits correctly accumlates until the max is hit at
+  which point, any extras should be returned.
+  """
   fun name(): String =>
     "credit-receiving/ReceiveCreditsCrossingMax"
 
@@ -55,6 +65,10 @@ class iso _TestReceiveCreditsCrossingMax is UnitTest
     h.assert_eq[ISize](50, rl.credits_available())
 
 class iso _TestNotYetReadyRouteInteractions is UnitTest
+  """
+  Verify that executing the post credit receiving action on a route
+  that isn't ready to run results in `_credits_initialized` being called.
+  """
   fun name(): String =>
     "credit-receiving/NotYetReadyRouteInteractions"
 
@@ -68,6 +82,11 @@ class iso _TestNotYetReadyRouteInteractions is UnitTest
     cr.action(route, true)
 
 class iso _TestReadyRouteWithoutCreditsInteractions is UnitTest
+  """
+  Verify that executing the post credit receiving action on a route
+  that is fully initialized but is currently out of credits results
+  in `_credits_replenished` being called.
+  """
   fun name(): String =>
     "credit-receiving/ReadyRouteWithoutCreditsInteractions"
 
