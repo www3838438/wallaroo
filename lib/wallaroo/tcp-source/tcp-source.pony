@@ -133,6 +133,9 @@ actor TCPSource is Producer
       r.application_initialized(_max_route_credits, "TCPSource")
     end
 
+  fun desc(): String =>
+    "TCPSource"
+
   //////////////
   // ORIGIN (resilience)
   fun ref _x_resilience_routes(): Routes =>
@@ -516,15 +519,15 @@ actor TCPSource is Producer
     _read_buf.undefined(_next_size)
 
   fun ref _mute() =>
-    ifdef "credit_trace" then
+    //ifdef "credit_trace" then
       @printf[I32]("MUTE\n".cstring())
-    end
+    //end
     _muted = true
 
   fun ref _unmute() =>
-    ifdef "credit_trace" then
+    //ifdef "credit_trace" then
       @printf[I32]("UNMUTE\n".cstring())
-    end
+    //end
     _muted = false
     if not _reading then
       _pending_reads()
@@ -601,10 +604,10 @@ class TCPSourceRouteCallbackHandler is RouteCallbackHandler
     match producer
     | let s: TCPSource ref =>
       _try_unmute(s)
-      ifdef "credit_trace" then
+      //ifdef "credit_trace" then
         @printf[I32]("Credits_replenished. Now _muted=%llu\n".cstring(),
           _muted)
-      end
+      //end
     else
       Fail()
     end
@@ -613,10 +616,10 @@ class TCPSourceRouteCallbackHandler is RouteCallbackHandler
     match producer
     | let s: TCPSource ref =>
       _try_mute(s)
-      ifdef "credit_trace" then
+      //ifdef "credit_trace" then
         @printf[I32]("Credits_exhausted. Now _muted=%llu\n".cstring(),
           _muted)
-      end
+      //end
     else
       Fail()
     end

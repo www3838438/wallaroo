@@ -13,7 +13,7 @@ actor TestCreditPool is TestList
     test(_TestUsingAllCreditsTriggersNotification)
     test(_TestRefreshNeededBeforeEmptyingThePool)
     test(_TestCollect)
-    test(_TestCollectReturnsAmountCollected)
+    test(_TestCollectTriggersNotification)
     test(_TestCollectUpdatesRefreshAt)
     test(_TestCantSurpassMax)
     test(_TestSurpassingMaxTriggersCreditReturn)
@@ -102,7 +102,7 @@ class iso _TestCollect is UnitTest
     pool.collect(10)
     h.assert_eq[ISize](11, pool.available())
 
-class iso _TestCollectReturnsAmountCollected is UnitTest
+class iso _TestCollectTriggersNotification is UnitTest
   """
   Verify that collect returns the value of credits actually collected.
   In a non overflow scenario, this is the amount supplied. In an
@@ -112,14 +112,12 @@ class iso _TestCollectReturnsAmountCollected is UnitTest
     "credit-pool/CollectReturnsAmountCollected"
 
   fun apply(h: TestHelper) =>
-    let pool = _CreditPool(_NullCreditPoolNotify, 0, 10)
+    let pool = _CreditPool(_CollectCheckingCreditPoolNotify(h, 10), 0, 10)
 
-    let c1 = pool.collect(4)
-    h.assert_eq[ISize](4, c1)
-    let c2 = pool.collect(5)
-    h.assert_eq[ISize](5, c2)
-    let c3 = pool.collect(6)
-    h.assert_eq[ISize](1, c3)
+    h.long_test(1_000_000_000)
+    h.expect_action("collected")
+
+    pool.collect(14)
 
 class iso _TestCollectUpdatesRefreshAt is UnitTest
   """
@@ -228,16 +226,6 @@ class iso _TestUpdatingMaxToBelowAvailableChangesRefreshAt is UnitTest
     let after = pool.next_refresh()
     h.assert_ne[ISize](before, after)
 
-class _NullCreditPoolNotify is _CreditPoolNotify
-  fun ref exhausted(pool: _CreditPool) =>
-    None
-
-  fun ref refresh_needed(pool: _CreditPool) =>
-    None
-
-  fun ref overflowed(pool: _CreditPool, amount: ISize) =>
-    None
-
 class _NotificationReportingCreditPoolNotify is _CreditPoolNotify
   let _h: TestHelper
 
@@ -250,6 +238,9 @@ class _NotificationReportingCreditPoolNotify is _CreditPoolNotify
   fun ref refresh_needed(pool: _CreditPool) =>
     _h.complete_action("refresh_needed")
 
+  fun ref collected(pool: _CreditPool, amount: ISize) =>
+    _h.complete_action("collected")
+
   fun ref overflowed(pool: _CreditPool, amount: ISize) =>
     _h.complete_action("overflowed")
 
@@ -261,6 +252,31 @@ class _OverflowCheckingCreditPoolNotify is _CreditPoolNotify
     _h = h
     _expected = expected
 
+  fun ref overflowed(pool: _CreditPool, amount: ISize) =>
+    _h.assert_eq[ISize](_expected, amount)
+    _h.complete_action("overflowed")
+
+  fun ref exhausted(pool: _CreditPool) =>
+    None
+
+  fun ref refresh_needed(pool: _CreditPool) =>
+    None
+
+  fun ref collected(pool: _CreditPool, amount: ISize) =>
+    None
+
+class _CollectCheckingCreditPoolNotify is _CreditPoolNotify
+  let _h: TestHelper
+  let _expected: ISize
+
+  new create(h: TestHelper, expected: ISize) =>
+    _h = h
+    _expected = expected
+
+  fun ref collected(pool: _CreditPool, amount: ISize) =>
+    _h.assert_eq[ISize](_expected, amount)
+    _h.complete_action("collected")
+
   fun ref exhausted(pool: _CreditPool) =>
     None
 
@@ -268,5 +284,4 @@ class _OverflowCheckingCreditPoolNotify is _CreditPoolNotify
     None
 
   fun ref overflowed(pool: _CreditPool, amount: ISize) =>
-    _h.assert_eq[ISize](_expected, amount)
-    _h.complete_action("overflowed")
+    None

@@ -4,6 +4,7 @@ trait tag Producer
   fun ref recoup_credits(credits: ISize)
   fun ref route_to(c: CreditFlowConsumer): (Route | None)
   fun ref next_sequence_id(): U64
+  fun desc(): String
 
   // from Origin
   fun tag hash(): U64 =>

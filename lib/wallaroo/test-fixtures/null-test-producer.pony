@@ -1,6 +1,9 @@
 use "wallaroo/routing"
 
 class NullTestProducer is Producer
+  fun desc(): String =>
+    "NullTestProduer"
+
   fun tag receive_credits(credits: ISize, from: Consumer): Producer tag =>
     this
 
@@ -23,4 +26,8 @@ class NullTestProducer is Producer
     Routes
 
   fun ref _flush(low_watermark: SeqId) =>
+    None
+
+  fun ref _bookkeeping(o_route_id: RouteId, o_seq_id: SeqId,
+    i_origin: Producer, i_route_id: RouteId, i_seq_id: SeqId) =>
     None

@@ -30,3 +30,15 @@ class NullRouteLogic is RouteLogic
 
   fun ref use_credit() =>
     None
+
+  fun ref _credits_exhausted() =>
+    None
+
+  fun ref _request_credits() =>
+    None
+
+  fun ref _credits_overflowed(credits: ISize) =>
+    None
+
+  fun ref _recoup_credits(credits: ISize) =>
+    None

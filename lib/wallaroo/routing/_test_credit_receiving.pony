@@ -134,6 +134,9 @@ class _ANotYetReadyRoute is RouteLogic
   fun _credits_replenished() =>
     _h.fail()
 
+  fun ref _credits_overflowed(credits: ISize) =>
+    None
+
   fun ref register_with_callback() =>
     None
 
@@ -150,6 +153,15 @@ class _ANotYetReadyRoute is RouteLogic
     true
 
   fun ref use_credit() =>
+    None
+
+  fun ref _credits_exhausted() =>
+    None
+
+  fun ref _request_credits() =>
+    None
+
+  fun ref _recoup_credits(credits: ISize) =>
     None
 
 class _AReadyRoute is RouteLogic
@@ -174,6 +186,9 @@ class _AReadyRoute is RouteLogic
   fun _credits_replenished() =>
     _h.complete_action("credits replenished")
 
+  fun ref _credits_overflowed(credits: ISize) =>
+    None
+
   fun ref register_with_callback() =>
     None
 
@@ -190,6 +205,15 @@ class _AReadyRoute is RouteLogic
     true
 
   fun ref use_credit() =>
+    None
+
+  fun ref _credits_exhausted() =>
+    None
+
+  fun ref _request_credits() =>
+    None
+
+ fun ref _recoup_credits(credits: ISize) =>
     None
 
 actor ConsumerThatGetsCreditsReturned is Consumer

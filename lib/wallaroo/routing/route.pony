@@ -35,6 +35,10 @@ trait RouteLogic
   fun ref dispose()
   fun ref try_request(): Bool
   fun ref use_credit()
+  fun ref _credits_exhausted()
+  fun ref _request_credits()
+  fun ref _credits_overflowed(by: ISize)
+ fun ref _recoup_credits(credits: ISize)
 
 class _RouteLogic is RouteLogic
   let _step: Producer ref
@@ -66,7 +70,7 @@ class _RouteLogic is RouteLogic
       end
       _max_credits = new_max_credits
 
-      _request_credits()
+      //_request_credits()
     end
 
   fun ref dispose() =>
@@ -124,7 +128,8 @@ class _RouteLogic is RouteLogic
 
   fun ref try_request(): Bool =>
     if _credits_available == 0 then
-      _credits_exhausted()
+      //_credits_exhausted()
+      @printf[None]("SHOUNDNT BE HERE\n".cstring())
       return false
     else
       if (_credits_available + 1) == _request_more_credits_after then
@@ -151,8 +156,9 @@ class _RouteLogic is RouteLogic
     _step.recoup_credits(credits)
 
   fun ref _credits_exhausted() =>
+    @printf[None]("Route(%s) cr exhausted\n".cstring(), _step_type.cstring())
     _callback.credits_exhausted(_step)
-    _request_credits()
+    //_request_credits()
 
   fun ref _credits_replenished() =>
     _callback.credits_replenished(_step)
@@ -177,6 +183,9 @@ class _RouteLogic is RouteLogic
 
   fun ref _return_credits(credits: ISize) =>
     _consumer.return_credits(credits)
+
+  fun ref _credits_overflowed(credits: ISize) =>
+    _return_credits(credits)
 
 class _EmptyRouteLogic is RouteLogic
   fun credits_available(): ISize =>
@@ -216,6 +225,22 @@ class _EmptyRouteLogic is RouteLogic
     true
 
   fun ref use_credit() =>
+    Fail()
+    None
+
+  fun ref _credits_exhausted() =>
+    Fail()
+    None
+
+  fun ref _request_credits() =>
+    Fail()
+    None
+
+  fun ref _credits_overflowed(credits: ISize) =>
+    Fail()
+    None
+
+ fun ref _recoup_credits(credits: ISize) =>
     Fail()
     None
 

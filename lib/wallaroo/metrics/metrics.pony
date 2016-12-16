@@ -18,6 +18,10 @@ primitive StartToEndCategory
 primitive NodeIngressEgressCategory
   fun apply(): String => "node-ingress-egress"
 
+interface MetricCollector
+  fun ref step_metric(pipeline: String, name: String, id: U16,
+    start_ts: U64, end_ts: U64, prefix: String = "")
+
 class _MetricsReporter
   let _topic: String
   let _metric_name: String

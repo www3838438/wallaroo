@@ -104,6 +104,9 @@ actor Step is (RunnableStep & Resilient & Producer &
     _id = id
     _default_target = default_target
 
+  fun desc(): String =>
+    "Step"
+
   //
   // Application startup lifecycle event
   //
@@ -123,7 +126,7 @@ actor Step is (RunnableStep & Resilient & Producer &
 
     match _default_target
     | let r: CreditFlowConsumerStep =>
-      _routes(r) = _route_builder(this, r, callback_handler, _metrics_reporter)
+      _routes(r) = _route_builder(this, r, callback_handler,_metrics_reporter)
     end
 
     for r in _routes.values() do
@@ -461,6 +464,7 @@ actor Step is (RunnableStep & Resilient & Producer &
     _distributable_credits = _distributable_credits - give_out
 
   be return_credits(credits: ISize) =>
+    @printf[None]("Step had credits returned: %d\n".cstring(), credits)
     recoup_credits(credits)
 
   fun ref recoup_credits(recoup: ISize) =>

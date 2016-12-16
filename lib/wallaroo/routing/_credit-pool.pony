@@ -1,18 +1,31 @@
 use "wallaroo/invariant"
 
 class _CreditPool
-  let _notify: _CreditPoolNotify
+  var _notify: _CreditPoolNotify
   var _max: ISize
   var _available: ISize
   var _refresh_at: ISize
 
-  new create(notify': _CreditPoolNotify, start_at': ISize = 0,
-    max': ISize = ISize.max_value())
+  new create(notify': _CreditPoolNotify = _NullCreditPoolNotify,
+    start_at': ISize = 0, max': ISize = ISize.max_value())
   =>
     _notify = notify'
     _available = start_at'
     _max = max'
     _refresh_at = _n(_available)
+
+  fun ref register_notify(notify': _CreditPoolNotify) =>
+    ifdef debug then
+      Invariant(
+        match _notify
+        | let x: _NullCreditPoolNotify =>
+          true
+        else
+          false
+        end)
+    end
+
+    _notify = notify'
 
   fun available(): ISize =>
     _available
@@ -20,21 +33,22 @@ class _CreditPool
   fun next_refresh(): ISize =>
     _refresh_at
 
-  fun ref collect(number: ISize = 1): ISize =>
+  fun ref collect(number: ISize = 1) =>
     ifdef debug then
       Invariant(number > 0)
     end
 
-    (_available, let collected) = if (_available + number) > _max then
+    _available = if (_available + number) > _max then
       let overflow = (_available + number) - _max
       _notify.overflowed(this, overflow)
-      (_max, number - overflow)
+      _notify.collected(this, number - overflow)
+      _max
     else
-      (_available + number, number)
+      _notify.collected(this, number)
+      _available + number
     end
 
     _refresh_at = _n(_available)
-    collected
 
   fun ref expend() =>
     ifdef debug then
@@ -73,4 +87,18 @@ class _CreditPool
 trait _CreditPoolNotify
   fun ref exhausted(pool: _CreditPool)
   fun ref refresh_needed(pool: _CreditPool)
+  fun ref collected(pool: _CreditPool, amount: ISize)
   fun ref overflowed(pool: _CreditPool, amount: ISize)
+
+class _NullCreditPoolNotify is _CreditPoolNotify
+  fun ref exhausted(pool: _CreditPool) =>
+    None
+
+  fun ref refresh_needed(pool: _CreditPool) =>
+    None
+
+  fun ref collected(pool: _CreditPool, amount: ISize) =>
+    None
+
+  fun ref overflowed(pool: _CreditPool, amount: ISize) =>
+    None
