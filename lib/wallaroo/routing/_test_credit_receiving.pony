@@ -12,7 +12,6 @@ actor TestCreditReceiving is TestList
     test(_TestReadyRouteWithoutCreditsInteractions)
     //test(_TestReadyRouteWithCreditsInteractions)
 
-
 class iso _TestReceiveCreditsBelowMax is UnitTest
   fun name(): String =>
     "credit-receiving/ReceiveCreditsBelowMax"
@@ -63,6 +62,7 @@ class iso _TestNotYetReadyRouteInteractions is UnitTest
     let route = _ANotYetReadyRoute(h)
     let cr: _CreditReceiver ref = _NotYetReadyRoute
 
+    h.long_test(1_000_000_000)
     h.expect_action("credits initialized")
     cr.preconditions(route, 5)
     cr.action(route, true)
@@ -76,6 +76,7 @@ class iso _TestReadyRouteWithoutCreditsInteractions is UnitTest
     let route = _AReadyRoute(h, has_credits)
     let cr: _CreditReceiver ref = _ReadyRoute
 
+    h.long_test(1_000_000_000)
     h.expect_action("credits replenished")
     cr.preconditions(route, 5)
     cr.action(route, not has_credits)
