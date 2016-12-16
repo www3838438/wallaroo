@@ -16,6 +16,7 @@ actor TestCreditPool is TestList
     test(_TestCollectUpdatesRefreshAt)
     test(_TestCantSurpassMax)
     test(_TestSurpassingMaxTriggersCreditReturn)
+    test(_TestUpdateMax)
 
 class iso _TestInitialization is UnitTest
   """
@@ -145,6 +146,21 @@ class iso _TestSurpassingMaxTriggersCreditReturn is UnitTest
 
     h.assert_eq[ISize](0, pool.available())
     pool.collect(50)
+
+class iso _TestUpdateMax is UnitTest
+  """
+  Verify that updating the max correctly updates.
+  """
+  fun name(): String =>
+    "credit-pool/UpdateMax"
+
+  fun apply(h: TestHelper) =>
+    let pool = _CreditPool(_NullCreditPoolNotify, 0, 5)
+
+    let new_max = ISize(10)
+    h.assert_ne[ISize](new_max, pool.max())
+    pool.change_max(new_max)
+    h.assert_eq[ISize](new_max, pool.max())
 
 class _NullCreditPoolNotify is _CreditPoolNotify
   fun ref exhausted(pool: _CreditPool) =>

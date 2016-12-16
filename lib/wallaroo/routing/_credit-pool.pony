@@ -2,16 +2,16 @@ use "wallaroo/invariant"
 
 class _CreditPool
   let _notify: _CreditPoolNotify
-  let _max: ISize
+  var _max: ISize
   var _available: ISize
   var _refresh_at: ISize
 
-  new create(notify: _CreditPoolNotify, start_at: ISize = 0,
-    max: ISize = ISize.max_value())
+  new create(notify': _CreditPoolNotify, start_at': ISize = 0,
+    max': ISize = ISize.max_value())
   =>
-    _notify = notify
-    _available = start_at
-    _max = max
+    _notify = notify'
+    _available = start_at'
+    _max = max'
     _refresh_at = _n(_available)
 
   fun available(): ISize =>
@@ -49,6 +49,16 @@ class _CreditPool
     then
       _notify.refresh_needed(this)
     end
+
+  fun max(): ISize =>
+    _max
+
+  fun ref change_max(n: ISize) =>
+    ifdef debug then
+      Invariant(n > 0)
+    end
+
+    _max = n
 
   fun tag _n(n: ISize): ISize =>
     n - (n >> 2)
