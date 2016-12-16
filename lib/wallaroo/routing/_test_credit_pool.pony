@@ -13,6 +13,7 @@ actor TestCreditPool is TestList
     test(_TestUsingAllCreditsTriggersNotification)
     test(_TestRefreshNeededBeforeEmptyingThePool)
     test(_TestCollect)
+    test(_TestCollectReturnsAmountCollected)
     test(_TestCollectUpdatesRefreshAt)
     test(_TestCantSurpassMax)
     test(_TestSurpassingMaxTriggersCreditReturn)
@@ -100,6 +101,25 @@ class iso _TestCollect is UnitTest
     h.assert_eq[ISize](1, pool.available())
     pool.collect(10)
     h.assert_eq[ISize](11, pool.available())
+
+class iso _TestCollectReturnsAmountCollected is UnitTest
+  """
+  Verify that collect returns the value of credits actually collected.
+  In a non overflow scenario, this is the amount supplied. In an
+  overflow scenario its a value from 0 to amount supplied.
+  """
+  fun name(): String =>
+    "credit-pool/CollectReturnsAmountCollected"
+
+  fun apply(h: TestHelper) =>
+    let pool = _CreditPool(_NullCreditPoolNotify, 0, 10)
+
+    let c1 = pool.collect(4)
+    h.assert_eq[ISize](4, c1)
+    let c2 = pool.collect(5)
+    h.assert_eq[ISize](5, c2)
+    let c3 = pool.collect(6)
+    h.assert_eq[ISize](1, c3)
 
 class iso _TestCollectUpdatesRefreshAt is UnitTest
   """

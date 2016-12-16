@@ -20,20 +20,21 @@ class _CreditPool
   fun next_refresh(): ISize =>
     _refresh_at
 
-  fun ref collect(number: ISize = 1) =>
+  fun ref collect(number: ISize = 1): ISize =>
     ifdef debug then
       Invariant(number > 0)
     end
 
-    _available = if (_available + number) > _max then
+    (_available, let collected) = if (_available + number) > _max then
       let overflow = (_available + number) - _max
       _notify.overflowed(this, overflow)
-      _max
+      (_max, number - overflow)
     else
-      _available + number
+      (_available + number, number)
     end
 
     _refresh_at = _n(_available)
+    collected
 
   fun ref expend() =>
     ifdef debug then
