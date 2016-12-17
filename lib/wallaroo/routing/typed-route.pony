@@ -16,7 +16,6 @@ class TypedRoute[In: Any val] is Route
   let _step: Producer ref
   let _consumer: CreditFlowConsumerStep
   let _metrics_reporter: MetricsReporter
-  var _route: RouteLogic = _EmptyRouteLogic
   let _credits: _CreditPool
   let _message_sender: _MessageSender
   let _credit_requester: CreditRequester
@@ -27,7 +26,6 @@ class TypedRoute[In: Any val] is Route
     _step = step
     _consumer = consumer
     _metrics_reporter = metrics_reporter
-    _route = _RouteLogic(step, consumer, handler, "Typed")
     _credits = _CreditPool
     _credit_requester = CreditRequester(step, consumer, _credits)
     _message_sender = ifdef "backpressure" then
@@ -40,7 +38,6 @@ class TypedRoute[In: Any val] is Route
     _step_type
 
   fun ref application_created() =>
-    _route.register_with_callback()
     _consumer.register_producer(_step)
 
   fun ref application_initialized(new_max_credits: ISize, step_type: String) =>
@@ -51,7 +48,6 @@ class TypedRoute[In: Any val] is Route
       _credit_requester.request()
     end
 
-    _route.application_initialized(new_max_credits, step_type)
 
   fun id(): U64 =>
     _route_id
