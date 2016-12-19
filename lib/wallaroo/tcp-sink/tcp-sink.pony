@@ -803,9 +803,11 @@ actor TCPSink is (CreditFlowConsumer & RunnableStep & Initializable)
 
   fun ref _apply_backpressure() =>
     _writeable = false
+    @ponyint_actor_setoverloaded[None](this)
     _notify.throttled(this)
 
   fun ref _release_backpressure() =>
+    @ponyint_actor_unsetoverloaded[None](this)
     _notify.unthrottled(this)
     _maybe_distribute_credits()
 

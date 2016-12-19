@@ -381,21 +381,20 @@ actor TCPSource is Producer
             _reading = false
             return
           end
-          ifdef osx then
-            if not carry_on then
-              _read_again()
-              _reading = false
-              return
-            end
 
-            sum = sum + block_size
+          if not carry_on then
+            _read_again()
+            _reading = false
+            return
+          end
 
-            if sum >= _max_size then
-              // If we've read _max_size, yield and read again later.
-              _read_again()
-              _reading = false
-              return
-            end
+          sum = sum + block_size
+
+          if sum >= _max_size then
+            // If we've read _max_size, yield and read again later.
+            _read_again()
+            _reading = false
+            return
           end
         end
 
@@ -446,21 +445,19 @@ actor TCPSource is Producer
               _reading = false
               return
             end
-            ifdef osx then
-              if not carry_on then
-                _read_again()
-                _reading = false
-                return
-              end
+            if not carry_on then
+              _read_again()
+              _reading = false
+              return
+            end
 
-              sum = sum + osize
+            sum = sum + osize
 
-              if sum >= _max_size then
-                // If we've read _max_size, yield and read again later.
-                _read_again()
-                _reading = false
-                return
-              end
+            if sum >= _max_size then
+              // If we've read _max_size, yield and read again later.
+              _read_again()
+              _reading = false
+              return
             end
           end
         else
@@ -476,21 +473,19 @@ actor TCPSource is Producer
             _reading = false
             return
           end
-          ifdef osx then
-            if not carry_on then
-              _read_again()
-              _reading = false
-              return
-            end
+          if not carry_on then
+            _read_again()
+            _reading = false
+            return
+          end
 
-            sum = sum + dsize
+          sum = sum + dsize
 
-            if sum >= _max_size then
-              // If we've read _max_size, yield and read again later.
-              _read_again()
-              _reading = false
-              return
-            end
+          if sum >= _max_size then
+            // If we've read _max_size, yield and read again later.
+            _read_again()
+            _reading = false
+            return
           end
         end
       end

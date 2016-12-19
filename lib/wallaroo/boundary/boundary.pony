@@ -776,10 +776,12 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
 
   fun ref _apply_backpressure() =>
     _writeable = false
+    @ponyint_actor_setoverloaded[None](this)
     _notify.throttled(this)
 
   fun ref _release_backpressure() =>
     _notify.unthrottled(this)
+    @ponyint_actor_unsetoverloaded[None](this)
     _maybe_distribute_credits()
 
   fun ref _read_buf_size() =>
