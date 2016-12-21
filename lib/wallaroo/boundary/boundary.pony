@@ -589,19 +589,17 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
 
           let out = _expect_read_buf.block(block_size)
           let carry_on = _notify.received(this, consume out)
-          ifdef osx then
-            if not carry_on then
-              _read_again()
-              return
-            end
+          if not carry_on then
+            _read_again()
+            return
+          end
 
-            sum = sum + block_size
+          sum = sum + block_size
 
-            if sum >= _max_size then
-              // If we've read _max_size, yield and read again later.
-              _read_again()
-              return
-            end
+          if sum >= _max_size then
+            // If we've read _max_size, yield and read again later.
+            _read_again()
+            return
           end
         end
 
@@ -645,18 +643,16 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
             let osize = block_size
 
             let carry_on = _notify.received(this, consume out)
-            ifdef osx then
-              if not carry_on then
-                _read_again()
-                return
-              end
+            if not carry_on then
+              _read_again()
+              return
+            end
 
-              sum = sum + osize
-              if sum >= _max_size then
-                // If we've read _max_size, yield and read again later.
-                _read_again()
-                return
-              end
+            sum = sum + osize
+            if sum >= _max_size then
+              // If we've read _max_size, yield and read again later.
+              _read_again()
+              return
             end
           end
         else
@@ -666,19 +662,17 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
           _read_len = 0
 
           let carry_on = _notify.received(this, consume data)
-          ifdef osx then
-            if not carry_on then
-              _read_again()
-              return
-            end
+          if not carry_on then
+            _read_again()
+            return
+          end
 
-            sum = sum + dsize
+          sum = sum + dsize
 
-            if sum >= _max_size then
-              // If we've read _max_size, yield and read again later.
-              _read_again()
-              return
-            end
+          if sum >= _max_size then
+            // If we've read _max_size, yield and read again later.
+            _read_again()
+            return
           end
         end
       end
