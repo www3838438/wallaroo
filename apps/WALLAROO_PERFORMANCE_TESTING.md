@@ -10,6 +10,11 @@ Once set up, an AWS cluster can be started with the following command:
 make cluster cluster_name=<YOUR_CLUSTER_NAME> mem_required=30 cpus_required=36 num_followers=0 force_instance=c4.8xlarge spot_bid_factor=100 ansible_system_cpus=0,18 ansible_isolcpus=false no_spot=true
 ```
 
+For resilience runs, use:
+```
+make cluster cluster_name=<YOUR_CLUSTER_NAME> num_followers=0 force_instance=i2.8xlarge spot_bid_factor=100 ansible_system_cpus=0,16 ansible_isolcpus=false no_spot=true
+```
+
 
 A packet cluster with this command:
 ```
@@ -169,6 +174,26 @@ sudo cset proc -s user -e numactl -- -C 15,17 chrt -f 80 ~/buffy/giles/sender/se
 To run the Orders Sender:
 ```
 sudo cset proc -s user -e numactl -- -C 16,17 chrt -f 80 ~/buffy/giles/sender/sender -b 127.0.0.1:7000 -m 5000000000 -s 300 -i 5_000_000 -f ~/buffy/demos/marketspread/350k-orders-fixish.msg -r --ponythreads=1 -y -g 57 --ponypinasio -w —ponynoblock
+```
+
+####2 MACHINE market spread (2 workers)
+Giles receiver needs to be running before marketspread (can be on either machine, but for consistency put it on
+machine 2):
+```
+cd ~/buffy
+sudo cset proc -s user -e numactl -- -C 14 chrt -f 80 ~/buffy/giles/receiver/receiver --ponythreads=1 --ponynoblock -w -l 0.0.0.0:5555
+```
+
+Make sure you have the same binary on both machines or you'll get segfaults with serialization.
+
+Machine 1:
+```
+sudo cset proc -s user -e numactl -- -C 1-12,17 chrt -f 80 ~/buffy/apps/market-spread/market-spread -i 0.0.0.0:7000,0.0.0.0:7001 -o <MACHINE IP ADDRESS FOR OUTPUT>:5555 -m <MACHINE IP ADDRESS FOR METRICS>:5001 -c 0.0.0.0:12500 -d 0.0.0.0:12501 --ponythreads 12 --ponypinasio --ponynoblock -t -w 2
+```
+
+Machine 2:
+```
+sudo cset proc -s user -e numactl -- -C 1-12,17 chrt -f 80 ~/buffy/apps/market-spread/market-spread -i 0.0.0.0:7000,0.0.0.0:7001 -o <MACHINE IP ADDRESS FOR OUTPUT>:5555 -m <MACHINE IP ADDRESS FOR METRICS>:5001 -c 0.0.0.0:12500 -d 0.0.0.0:12501 --ponythreads 12 --ponypinasio --ponynoblock -n worker2 -w 2
 ```
 
 ###Packet
