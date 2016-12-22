@@ -399,7 +399,7 @@ actor TCPSource is Producer
         end
 
         // Read as much data as possible.
-        _read_buf_size(sum)
+        _read_buf_size()
         let len = @pony_os_recv[USize](
           _event,
           _read_buf.cpointer().usize() + _read_len,
@@ -504,11 +504,12 @@ actor TCPSource is Producer
 
     _pending_reads()
 
-  fun ref _read_buf_size(less: USize) =>
+  fun ref _read_buf_size() =>
     """
     Resize the read buffer.
     """
-    _read_buf.undefined(_next_size - less)
+
+    _read_buf.undefined(_next_size)
 
   fun ref _mute() =>
     ifdef "credit_trace" then
