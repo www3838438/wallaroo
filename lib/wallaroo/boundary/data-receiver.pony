@@ -33,6 +33,9 @@ actor DataReceiver is Producer
     _alfred = alfred
     _alfred.register_incoming_boundary(this)
 
+  fun desc(): String =>
+    "Data Receiver"
+
   be data_connect(sender_step_id: U128) =>
     _sender_step_id = sender_step_id
 
@@ -122,8 +125,20 @@ be receive_credits(credits: ISize, from: CreditFlowConsumer) =>
 fun ref recoup_credits(credits: ISize) =>
   None
 
+fun ref credits_exhausted() =>
+  None
+
 fun ref route_to(c: CreditFlowConsumer): (Route | None) =>
   None
 
 fun ref next_sequence_id(): U64 =>
   0
+
+fun ref credits_initialized() =>
+  None
+
+fun ref report_route_ready_to_work(r: (CreditRequester | RouteLogic)) =>
+  None
+
+fun ref credits_replenished() =>
+  None

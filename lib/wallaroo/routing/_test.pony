@@ -10,5 +10,7 @@ actor Main is TestList
     None
 
   fun tag tests(test: PonyTest) =>
+    TestCreditPool.make().tests(test)
     TestCreditReceiving.make().tests(test)
+    TestMessageSending.make().tests(test)
     TestWatermarking.make().tests(test)

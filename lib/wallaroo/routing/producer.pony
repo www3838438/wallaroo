@@ -2,8 +2,13 @@ trait tag Producer
   // from CreditFlowProducer
   be receive_credits(credits: ISize, from: CreditFlowConsumer)
   fun ref recoup_credits(credits: ISize)
+  fun ref credits_exhausted()
+  fun ref credits_initialized()
+  fun ref report_route_ready_to_work(r: (CreditRequester | RouteLogic))
+  fun ref credits_replenished()
   fun ref route_to(c: CreditFlowConsumer): (Route | None)
   fun ref next_sequence_id(): U64
+  fun desc(): String
 
   // from Origin
   fun tag hash(): U64 =>

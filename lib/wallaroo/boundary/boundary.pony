@@ -51,6 +51,7 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
   var _read_buf: Array[U8] iso
   var _next_size: USize
   let _max_size: USize
+  let _max_read: USize
   var _connect_count: U32 = 0
   var _fd: U32 = -1
   var _in_sent: Bool = false
@@ -102,7 +103,8 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
     _metrics_reporter = consume metrics_reporter
     _read_buf = recover Array[U8].undefined(init_size) end
     _next_size = init_size
-    _max_size = max_size
+    _max_size = 65_536
+    _max_read = 16_384
 
   //
   // Application startup lifecycle event
@@ -618,7 +620,7 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
           return
         | _next_size =>
           // Increase the read buffer size.
-          _next_size = _max_size.min(_next_size * 2)
+          _next_size = _max_read.min(_next_size * 2)
         end
 
          _read_len = _read_len + len
@@ -771,6 +773,9 @@ actor OutgoingBoundary is (CreditFlowConsumer & RunnableStep & Initializable)
   fun ref _apply_backpressure() =>
     _writeable = false
     @ponyint_actor_setoverloaded[None](this)
+    ifdef linux then
+      _resubscribe_event()
+    end
     _notify.throttled(this)
 
   fun ref _release_backpressure() =>

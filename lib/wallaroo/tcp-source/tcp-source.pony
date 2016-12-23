@@ -40,6 +40,7 @@ actor TCPSource is Producer
   let _notify: TCPSourceNotify
   var _next_size: USize
   let _max_size: USize
+  let _max_read: USize
   var _connect_count: U32
   var _fd: U32 = -1
   var _expect: USize = 0
@@ -62,6 +63,9 @@ actor TCPSource is Producer
 
   // Origin (Resilience)
   var _seq_id: SeqId = 1 // 0 is reserved for "not seen yet"
+
+  let _rcbhandler: TCPSourceRouteCallbackHandler ref =
+    TCPSourceRouteCallbackHandler
 
   new _accept(listen: TCPSourceListener, notify: TCPSourceNotify iso,
     routes: Array[CreditFlowConsumerStep] val, route_builder: RouteBuilder val,
@@ -91,7 +95,8 @@ actor TCPSource is Producer
     _connected = true
     _read_buf = recover Array[U8].undefined(init_size) end
     _next_size = init_size
-    _max_size = 2_097_152
+    _max_size = 65_536
+    _max_read = 16_384
 
     _route_builder = route_builder
     _outgoing_boundaries = outgoing_boundaries
@@ -101,24 +106,21 @@ actor TCPSource is Producer
     //listening until we are done recovering
     _notify.accepted(this)
 
-    let handler: TCPSourceRouteCallbackHandler ref =
-      TCPSourceRouteCallbackHandler
-
     for consumer in routes.values() do
       _routes(consumer) =
-        _route_builder(this, consumer, handler, _metrics_reporter)
+        _route_builder(this, consumer, _rcbhandler, _metrics_reporter)
     end
 
     for (worker, boundary) in _outgoing_boundaries.pairs() do
       _routes(boundary) =
-        _route_builder(this, boundary, handler, _metrics_reporter)
+        _route_builder(this, boundary, _rcbhandler, _metrics_reporter)
     end
 
     match default_target
     | let r: CreditFlowConsumerStep =>
       match forward_route_builder
       | let frb: RouteBuilder val =>
-        _routes(r) = frb(this, r, handler, _metrics_reporter)
+        _routes(r) = frb(this, r, _rcbhandler, _metrics_reporter)
       end
     end
 
@@ -132,6 +134,9 @@ actor TCPSource is Producer
     for r in _routes.values() do
       r.application_initialized(_max_route_credits, "TCPSource")
     end
+
+  fun desc(): String =>
+    "TCPSource"
 
   //////////////
   // ORIGIN (resilience)
@@ -381,7 +386,6 @@ actor TCPSource is Producer
             _reading = false
             return
           end
-
           if not carry_on then
             _read_again()
             _reading = false
@@ -414,7 +418,7 @@ actor TCPSource is Producer
           return
         | _next_size =>
           // Increase the read buffer size.
-          _next_size = _max_size.min(_next_size * 2)
+          _next_size = _max_read.min(_next_size * 2)
         end
 
          _read_len = _read_len + len
@@ -512,15 +516,15 @@ actor TCPSource is Producer
     _read_buf.undefined(_next_size)
 
   fun ref _mute() =>
-    ifdef "credit_trace" then
+    //ifdef "credit_trace" then
       @printf[I32]("MUTE\n".cstring())
-    end
+    //end
     _muted = true
 
   fun ref _unmute() =>
-    ifdef "credit_trace" then
+    //ifdef "credit_trace" then
       @printf[I32]("UNMUTE\n".cstring())
-    end
+    //end
     _muted = false
     if not _reading then
       _pending_reads()
@@ -551,6 +555,18 @@ actor TCPSource is Producer
       @pony_asio_event_resubscribe(_event, flags)
     end
 
+  fun ref credits_exhausted() =>
+    _rcbhandler.credits_exhausted(this)
+
+  fun ref credits_initialized() =>
+    _rcbhandler.credits_initialized(this)
+
+  fun ref report_route_ready_to_work(r: (CreditRequester | RouteLogic)) =>
+    None
+
+  fun ref credits_replenished() =>
+    _rcbhandler.credits_replenished(this)
+
 class TCPSourceRouteCallbackHandler is RouteCallbackHandler
   let _registered_routes: SetIs[RouteLogic tag] = _registered_routes.create()
   var _muted: ISize = 0
@@ -579,11 +595,7 @@ class TCPSourceRouteCallbackHandler is RouteCallbackHandler
       Fail()
     end
 
-  fun ref credits_initialized(producer: Producer ref, r: RouteLogic tag) =>
-    ifdef debug then
-      Invariant(_registered_routes.contains(r))
-    end
-
+  fun ref credits_initialized(producer: Producer ref) =>
     match producer
     | let s: TCPSource ref =>
       _try_unmute(s)

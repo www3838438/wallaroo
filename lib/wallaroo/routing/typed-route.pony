@@ -16,7 +16,9 @@ class TypedRoute[In: Any val] is Route
   let _step: Producer ref
   let _consumer: CreditFlowConsumerStep
   let _metrics_reporter: MetricsReporter
-  var _route: RouteLogic = _EmptyRouteLogic
+  let _credits: _CreditPool
+  let _message_sender: _MessageSender
+  let _credit_requester: CreditRequester
 
   new create(step: Producer ref, consumer: CreditFlowConsumerStep,
     handler: RouteCallbackHandler, metrics_reporter: MetricsReporter ref)
@@ -24,27 +26,41 @@ class TypedRoute[In: Any val] is Route
     _step = step
     _consumer = consumer
     _metrics_reporter = metrics_reporter
-    _route = _RouteLogic(step, consumer, handler, "Typed")
+    _credits = _CreditPool
+    _credit_requester = CreditRequester(step, consumer, _credits)
+    _message_sender = ifdef "backpressure" then
+      _BackPressureAwareMessageSender(_credits)
+    else
+      _BackPressureIgnorantMessageSender
+    end
+
+  fun desc(): String =>
+    _step_type
 
   fun ref application_created() =>
-    _route.register_with_callback()
     _consumer.register_producer(_step)
 
   fun ref application_initialized(new_max_credits: ISize, step_type: String) =>
     _step_type = step_type
-    _route.application_initialized(new_max_credits, step_type)
+
+    ifdef "backpressure" then
+      _credits.change_max(new_max_credits)
+      _credit_requester.request()
+    end
+
 
   fun id(): U64 =>
     _route_id
 
   fun ref receive_credits(credits: ISize) =>
-    _route.receive_credits(credits)
+    _credit_requester.receive(credits)
+   // _route.receive_credits(credits)
 
   fun ref dispose() =>
     """
     Return unused credits to downstream consumer
     """
-    _route.dispose()
+    _consumer.unregister_producer(_step, _credits.available())
 
   fun ref run[D](metric_name: String, pipeline_time_spent: U64, data: D,
     cfp: Producer ref,
@@ -63,23 +79,15 @@ class TypedRoute[In: Any val] is Route
         | let source: TCPSource ref =>
           Invariant(not source.is_muted())
         end
-        ifdef "backpressure" then
-          Invariant(_route.credits_available() > 0)
-        end
       end
 
-      ifdef "backpressure" then
-        _send_message_on_route(metric_name, pipeline_time_spent, input, cfp,
-          origin,msg_uid, frac_ids, i_seq_id, i_route_id, latest_ts,
-          metrics_id, worker_ingress_ts)
-
-        _route.try_request()
-      else
-        _send_message_on_route(metric_name, pipeline_time_spent, input, cfp,
-          origin, msg_uid, frac_ids, i_seq_id, i_route_id, latest_ts,
-          metrics_id, worker_ingress_ts)
-        true
-      end
+      _message_sender.send[In](input,
+        cfp, _consumer,_route_id,
+        msg_uid, frac_ids,
+        origin, i_route_id, i_seq_id,
+        _metrics_reporter, metric_name, metrics_id,
+        pipeline_time_spent, latest_ts, worker_ingress_ts,
+        _step_type)
     else
       Fail()
       true
@@ -94,52 +102,3 @@ class TypedRoute[In: Any val] is Route
     // Forward should never be called on a TypedRoute
     Fail()
     true
-
-  fun ref _send_message_on_route(metric_name: String, pipeline_time_spent: U64,
-    input: In, cfp: Producer ref, i_origin: Producer, msg_uid: U128,
-    frac_ids: None, i_seq_id: SeqId, i_route_id: RouteId, latest_ts: U64,
-    metrics_id: U16, worker_ingress_ts: U64)
-  =>
-    ifdef debug and "backpressure" then
-      Invariant(_route.credits_available() > 0)
-    end
-
-    let o_seq_id = cfp.next_sequence_id()
-
-    let my_latest_ts = ifdef "detailed-metrics" then
-        Time.nanos()
-      else
-        latest_ts
-      end
-
-    let new_metrics_id = ifdef "detailed-metrics" then
-        _metrics_reporter.step_metric(metric_name,
-          "Before send to next step via behavior", metrics_id,
-          latest_ts, my_latest_ts)
-        metrics_id + 1
-      else
-        metrics_id
-      end
-
-    _consumer.run[In](metric_name,
-      pipeline_time_spent,
-      input,
-      cfp,
-      msg_uid,
-      frac_ids,
-      o_seq_id,
-      _route_id,
-      my_latest_ts,
-      new_metrics_id,
-      worker_ingress_ts)
-
-    ifdef "trace" then
-      @printf[I32]("Sent msg from Route (%s)\n".cstring(),
-        _step_type.cstring())
-    end
-
-    ifdef "resilience" then
-      cfp._bookkeeping(_route_id, o_seq_id, i_origin, i_route_id, i_seq_id)
-    end
-
-    _route.use_credit()
