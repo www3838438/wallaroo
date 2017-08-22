@@ -202,10 +202,11 @@ actor EventLog
         "expected steps!\n").cstring())
       Fail()
     end
-    try
-      @printf[U32]("|||NISAN EL.snapshot_state queue_log_entry: %d\n".cstring(),
-        payload(0).size())
-    end
+
+    // Note: calling _flush_buffer relies on the assumption that everything
+    // is acked by now, which isn't being validated here.
+    // This should be addressed by
+    // https://github.com/Sendence/wallaroo/issues/1132
     _flush_buffer(origin_id, seq_id)
     _queue_log_entry(origin_id, uid, None, statechange_id, seq_id,
       consume payload, true)

@@ -638,7 +638,6 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
   let _rb: Reader = Reader
   let _auth: AmbientAuth
   var _id: (U128 | None)
-  var _flag: Bool = false
 
   new iso create(state_builder: {(): S} val,
       event_log: EventLog, auth: AmbientAuth)
@@ -653,14 +652,12 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
     _id = id
 
   fun ref register_state_change(scb: StateChangeBuilder[S]) : U64 =>
-    _state_change_repository.make_and_register(_state)
+    _state_change_repository.make_and_register(scb)
 
   fun ref replay_log_entry(msg_uid: U128, frac_ids: FractionalMessageId,
     statechange_id: U64, payload: ByteSeq val, origin: Producer)
   =>
-    @printf[I32]("|||NISAN StateRunner.replay_log_entry\n".cstring())
     if statechange_id == U64.max_value() then
-      @printf[I32]("|||NISAN StateRunner.replay_log_entry replace_serialized\n".cstring())
       replace_serialized_state(payload)
     else
       try
@@ -682,15 +679,6 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
     latest_ts: U64, metrics_id: U16, worker_ingress_ts: U64,
     metrics_reporter: MetricsReporter ref): (Bool, Bool, U64)
   =>
-    @printf[I32]("|||NISAN SR.run _flag: %s\n".cstring(),
-      _flag.string().cstring())
-    match _state
-    | let s': Sable =>
-      @printf[I32](("|||NISAN SR.run: " + s'.string() + "\n")
-        .cstring())
-      @printf[I32]("|||NISAN SR.run step_id: %s\n".cstring(),
-        _id.string().cstring())
-    end
     match data
     | let sp: StateProcessor[S] =>
       let new_metrics_id = ifdef "detailed-metrics" then
@@ -729,7 +717,6 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
           let payload = _wb.done()
           match _id
           | let buffer_id: U128 =>
-
             _event_log.queue_log_entry(buffer_id, i_msg_uid, frac_ids,
               sc.id(), producer.current_sequence_id(), consume payload)
           else
@@ -750,11 +737,6 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
         end
       end
 
-      match _state
-      | let s': Sable =>
-        @printf[I32](("|||NISAN SR.run end: " + s'.string() + "\n")
-          .cstring())
-      end
       (is_finished, keep_sending, last_ts)
     else
       @printf[I32]("StateRunner: Input was not a StateProcessor!\n".cstring())
@@ -787,23 +769,12 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
       match _state.read_log_entry(_rb, _auth)
       | let s: S =>
         _state = s
-        _flag = true
-        match _state
-        | let s': Sable =>
-          @printf[I32](("|||NISAN SR.replace_serialized: " + s'.string() + "\n")
-            .cstring())
-          @printf[I32]("|||NISAN SR.replace_serialied step_id: %s\n".cstring(),
-            _id.string().cstring())
-        end
       else
         Fail()
       end
     else
       Fail()
     end
-
-interface Sable
-  fun string(): String
 
 class iso RouterRunner
   fun ref run[Out: Any val](metric_name: String, pipeline_time_spent: U64,

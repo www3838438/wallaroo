@@ -13,7 +13,7 @@ type LogEntry is (Bool, U128, U128, FractionalMessageId, U64, U64,
 // used to hold a receovered log entry that might need to be replayed on
 // recovery
 // (origin_id, uid, frac_ids, statechange_id, seq_id, payload)
-type ReplayEntry is (U128, U128, None, U64, U64, ByteSeq val)
+type ReplayEntry is (U128, U128, FractionalMessageId, U64, U64, ByteSeq val)
 
 //////////////////////////////////
 // Helpers for RotatingFileBackend
@@ -167,8 +167,8 @@ class FileBackend is Backend
             end
 
             // put entry into temporary recovered buffer
-            replay_buffer.push((origin_id, uid, None, statechange_id, seq_id
-                               , payload))
+            replay_buffer.push((origin_id, uid, frac_ids, statechange_id, seq_id
+              ,payload))
 
           end
 
@@ -211,7 +211,6 @@ class FileBackend is Backend
   fun ref write(): USize ?
   =>
     let size = _writer.size()
-    @printf[I32]("|||NISAN Backend.write: %d bytes\n".cstring(), size)
     if not _file.writev(recover val _writer.done() end) then
       error
     else
@@ -267,7 +266,6 @@ class FileBackend is Backend
     _writer.writev(payload)
 
   fun ref sync() ? =>
-    @printf[I32]("|||NISAN Backend.sync: %d\n".cstring(), _bytes_written)
     _file.sync()
     match _file.errno()
     | FileOK => None
@@ -276,7 +274,6 @@ class FileBackend is Backend
     end
 
   fun ref datasync() ? =>
-    @printf[I32]("|||NISAN Backend.datasync: %d\n".cstring(), _bytes_written)
     _file.datasync()
     match _file.errno()
     | FileOK => None
@@ -321,11 +318,9 @@ class RotatingFileBackend is Backend
     _backend = FileBackend(fp, _event_log)
 
   fun ref sync() ? =>
-    @printf[I32]("||| Nisan RFBE.sync\n".cstring())
     _backend.sync()
 
   fun ref datasync() ? =>
-    @printf[I32]("||| Nisan RFBE.datasync\n".cstring())
     _backend.datasync()
 
   fun ref start_log_replay() => _backend.start_log_replay()

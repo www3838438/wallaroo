@@ -139,7 +139,6 @@ class val WindowStateBuilder
   fun name(): String => "Window State"
 
 class WindowState is State
-  var idx: USize = 0
   var ring: Ring[U64] = Ring[U64].from_array(recover [0,0,0,0] end, 4, 0)
 
   fun string(): String =>
@@ -150,12 +149,7 @@ class WindowState is State
     end
 
   fun ref push(u: U64) =>
-    @printf[I32]("|||NISAN WS.push pre: %s\n".cstring(),
-      string().cstring())
     ring.push(u)
-    @printf[I32]("|||NISAN WS.push post: %s\n".cstring(),
-      string().cstring())
-    idx = idx + 1
 
     ifdef "validate" then
       try
@@ -192,16 +186,29 @@ class WindowStateChange is StateChange[WindowState]
   fun apply(state: WindowState) =>
     state.push(_last_value)
 
+  fun string(state: WindowState): String =>
+    // This is necessary because in the StateChange (rather than
+    // DirectStateChange) scenario, at the time where ObserveNewValue is
+    // returning an output to be encoded for the sink, the state_change hasn't
+    // yet been applied to the state. So if State still has the previous
+    // copmutation's values, and state_change has the next value to be applied,
+    // we need to construct the output of the current computation from the two
+    // in order to return _this computation's output_ to the sink encoder.
+    @printf[I32]("||NISAN WSC.string: %s, value: %s\n".cstring(),
+      state.string().cstring(), _last_value.string().cstring())
+    let ring = state.ring.clone()
+    ring.push(_last_value)
+    try
+      ring.string(where fill = "0")
+    else
+      "Error: failed to convert sequence window into a string."
+    end
+
   fun write_log_entry(out_writer: Writer) =>
-    (let buf, let s, let c) = _window.ring.raw()
-    WindowStateEncoder(_window.idx, consume buf, s, c, out_writer)
+    WindowStateEncoder(_last_value, out_writer)
 
   fun ref read_log_entry(in_reader: Reader) ? =>
-    (let index, let buf, let size, let count) = WindowStateDecoder(
-      in_reader)
-    _window = WindowState
-    _window.idx = index
-    _window.ring = Ring[U64].from_array(consume buf, size, count)
+    _last_value = WindowStateDecoder(in_reader)
 
 class WindowStateChangeBuilder is StateChangeBuilder[WindowState]
   fun apply(id: U64): StateChange[WindowState] =>
@@ -214,19 +221,19 @@ primitive ObserveNewValue is StateComputation[U64 val, String val, WindowState]
     sc_repo: StateChangeRepository[WindowState],
     state: WindowState): (String val, StateChange[WindowState] ref)
   =>
+    @printf[I32]("||NISAN ONV.apply State: %s, val: %s\n".cstring(),
+      state.string().cstring(), u.string().cstring())
     let state_change: WindowStateChange ref =
       try
         sc_repo.lookup_by_name("UpdateWindow") as WindowStateChange
       else
-        @printf[I32]("|||NISAN ONV.SC: ELSE\n".cstring())
         WindowStateChange(0)
       end
-    @printf[I32]("|||NISAN ONV.state: %s\n".cstring(), state.string().cstring())
     state_change.update(u)
 
     // TODO: This is ugly since this is where we need to simulate the state
     // change in order to produce a result
-    (state_change.string(), state_change)
+    (state_change.string(state), state_change)
 
   fun state_change_builders():
     Array[StateChangeBuilder[WindowState] val] val

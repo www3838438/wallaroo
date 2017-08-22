@@ -22,7 +22,7 @@ def test_recovery():
     sources = 1
     workers = 2
     res_dir = '/tmp/res-data'
-    expect = 2000
+    expect = 800
 
     setup_resilience_path(res_dir)
 
@@ -98,6 +98,7 @@ def test_recovery():
 
         # Stop sink
         sink.stop()
+        print 'sink.data size: ', len(sink.data)
 
         # Use validator to validate the data in at-least-once mode
         # save sink data to a file
@@ -113,6 +114,10 @@ def test_recovery():
         try:
             assert(success)
         except AssertionError:
+            print runners[-1].get_output()[0]
+            print '---'
+            print runners[-2].get_output()[0]
+            print '---'
             raise AssertionError('Validation failed with the following '
                                  'error:\n{}'.format(stdout))
 
