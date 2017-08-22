@@ -5,6 +5,7 @@ use "format"
 use "wallaroo/core"
 use "wallaroo/fail"
 use "wallaroo/messages"
+use "sendence/bytes"
 
 // (is_watermark, origin_id, uid, frac_ids, statechange_id, seq_id, payload)
 type LogEntry is (Bool, U128, U128, FractionalMessageId, U64, U64,
@@ -130,16 +131,18 @@ class FileBackend is Backend
         //start iterating until we reach original EOF
         while _file.position() < size do
           r.append(_file.read(25))
-          let is_watermark = r.bool()
-          let origin_id = r.u128_be()
-          let seq_id = r.u64_be()
+          let is_watermark = r.bool()  // 1
+          let origin_id = r.u128_be()  // 16
+          let seq_id = r.u64_be()      // 8
+          @printf[I32]("|| NISAN seq_id: %d is_watermark: %s\n".cstring(),
+            seq_id, is_watermark.string().cstring())
           if is_watermark then
             // save last watermark read from file
             watermarks(origin_id) = seq_id
           else
             r.append(_file.read(24))
-            let uid = r.u128_be()
-            let fractional_size = r.u64_be()
+            let uid = r.u128_be()  // 16
+            let fractional_size = r.u64_be()  // 8
             let frac_ids = recover val
               if fractional_size > 0 then
                 let bytes_to_read = fractional_size.usize() * 4
@@ -156,8 +159,10 @@ class FileBackend is Backend
               end
             end
             r.append(_file.read(16))
-            let statechange_id = r.u64_be()
-            let payload_length = r.u64_be()
+            let statechange_id = r.u64_be()  // 8
+            let payload_length = r.u64_be()  // 8
+            @printf[I32]("|| NISAN payload_length: %d\n".cstring(),
+              payload_length)
             let payload = recover val
               if payload_length > 0 then
                 _file.read(payload_length.usize())
@@ -165,6 +170,9 @@ class FileBackend is Backend
                 Array[U8]
               end
             end
+            let u' = Bytes.to_u64(payload(0), payload(1), payload(2),
+            payload(3), payload(4), payload(5), payload(6), payload(7))
+            @printf[I32]("||NISAN payload: %d\n".cstring(), u')
 
             // put entry into temporary recovered buffer
             replay_buffer.push((origin_id, uid, frac_ids, statechange_id, seq_id
@@ -236,6 +244,8 @@ class FileBackend is Backend
     _writer.bool(is_watermark)
     _writer.u128_be(origin_id)
     _writer.u64_be(seq_id)
+    @printf[I32]("||NISAN encode_entry: seq_id: %d is_watermark: %s\n"
+      .cstring(), seq_id, is_watermark.string().cstring())
 
     if not is_watermark then
       _writer.u128_be(uid)
@@ -263,7 +273,22 @@ class FileBackend is Backend
     end
 
     // write data to write buffer
+    //_writer.u64_be(2)
+    try
+      let p = payload(0)
+      let u' = Bytes.to_u64(p(0), p(1), p(2), p(3), p(4), p(5), p(6), p(7))
+      @printf[I32]("||NISAN encode_entry writev(payload): %d\n".cstring(), u')
+    end
     _writer.writev(payload)
+    let stuff = _writer.done()
+    let stuff_sz = stuff.size()
+    try
+      let p = stuff(stuff_sz-1)
+      let u' = Bytes.to_u64(p(0), p(1), p(2), p(3), p(4), p(5), p(6), p(7))
+      @printf[I32]("||NISAN DONE(payload): %d\n".cstring(), u')
+    end
+    _writer.writev(consume stuff)
+    // its bad here
 
   fun ref sync() ? =>
     _file.sync()
