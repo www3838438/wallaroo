@@ -150,7 +150,11 @@ class WindowState is State
     end
 
   fun ref push(u: U64) =>
+    @printf[I32]("|||NISAN WS.push pre: %s\n".cstring(),
+      string().cstring())
     ring.push(u)
+    @printf[I32]("|||NISAN WS.push post: %s\n".cstring(),
+      string().cstring())
     idx = idx + 1
 
     ifdef "validate" then
@@ -174,7 +178,7 @@ class WindowState is State
 
 class WindowStateChange is StateChange[WindowState]
   var _id: U64
-  var _window: WindowState = WindowState
+  var _last_value: U64 = 0
 
   new create(id': U64) =>
     _id = id'
@@ -183,15 +187,10 @@ class WindowStateChange is StateChange[WindowState]
   fun id(): U64 => _id
 
   fun ref update(u: U64 val) =>
-    _window.push(u)
-
-  fun string(): String =>
-    _window.string()
+    _last_value = u
 
   fun apply(state: WindowState) =>
-    (let buf, let size', let count') = _window.ring.raw()
-    state.ring = Ring[U64].from_array(consume buf, size', count')
-    state.idx = _window.idx
+    state.push(_last_value)
 
   fun write_log_entry(out_writer: Writer) =>
     (let buf, let s, let c) = _window.ring.raw()
@@ -219,9 +218,10 @@ primitive ObserveNewValue is StateComputation[U64 val, String val, WindowState]
       try
         sc_repo.lookup_by_name("UpdateWindow") as WindowStateChange
       else
+        @printf[I32]("|||NISAN ONV.SC: ELSE\n".cstring())
         WindowStateChange(0)
       end
-
+    @printf[I32]("|||NISAN ONV.state: %s\n".cstring(), state.string().cstring())
     state_change.update(u)
 
     // TODO: This is ugly since this is where we need to simulate the state

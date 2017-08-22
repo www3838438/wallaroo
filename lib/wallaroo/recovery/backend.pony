@@ -211,6 +211,7 @@ class FileBackend is Backend
   fun ref write(): USize ?
   =>
     let size = _writer.size()
+    @printf[I32]("|||NISAN Backend.write: %d bytes\n".cstring(), size)
     if not _file.writev(recover val _writer.done() end) then
       error
     else
@@ -266,6 +267,7 @@ class FileBackend is Backend
     _writer.writev(payload)
 
   fun ref sync() ? =>
+    @printf[I32]("|||NISAN Backend.sync: %d\n".cstring(), _bytes_written)
     _file.sync()
     match _file.errno()
     | FileOK => None
@@ -274,6 +276,7 @@ class FileBackend is Backend
     end
 
   fun ref datasync() ? =>
+    @printf[I32]("|||NISAN Backend.datasync: %d\n".cstring(), _bytes_written)
     _file.datasync()
     match _file.errno()
     | FileOK => None
@@ -317,9 +320,13 @@ class RotatingFileBackend is Backend
     let fp = FilePath(_base_dir, p)
     _backend = FileBackend(fp, _event_log)
 
-  fun ref sync() ? => _backend.sync()
+  fun ref sync() ? =>
+    @printf[I32]("||| Nisan RFBE.sync\n".cstring())
+    _backend.sync()
 
-  fun ref datasync() ? => _backend.datasync()
+  fun ref datasync() ? =>
+    @printf[I32]("||| Nisan RFBE.datasync\n".cstring())
+    _backend.datasync()
 
   fun ref start_log_replay() => _backend.start_log_replay()
 

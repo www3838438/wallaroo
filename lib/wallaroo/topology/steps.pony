@@ -56,6 +56,8 @@ actor Step is (Producer & Consumer)
     router: Router = EmptyRouter, default_target: (Step | None) = None,
     omni_router: OmniRouter = EmptyOmniRouter)
   =>
+    @printf[I32]("|||NISAN Step.create id: %s\n".cstring(),
+      id.string().cstring())
     _runner = consume runner
     match _runner
     | let r: ReplayableRunner => r.set_step_id(id)
@@ -235,6 +237,8 @@ actor Step is (Producer & Consumer)
     i_seq_id: SeqId, i_route_id: RouteId, latest_ts: U64, metrics_id: U16,
     worker_ingress_ts: U64)
   =>
+    @printf[I32]("|||NISAN Step._run step_id: %s\n".cstring(),
+      _id.string().cstring())
     _seq_id_generator.new_incoming_message()
 
     let my_latest_ts = ifdef "detailed-metrics" then
@@ -373,6 +377,7 @@ actor Step is (Producer & Consumer)
   be replay_log_entry(uid: U128, frac_ids: FractionalMessageId,
     statechange_id: U64, payload: ByteSeq val)
   =>
+    @printf[I32]("|||NISAN Step.replay_log_entry\n".cstring())
     if not _is_duplicate(uid, frac_ids) then
       _deduplication_list.push((this, uid, frac_ids, 0, 0))
       match _runner
@@ -382,6 +387,8 @@ actor Step is (Producer & Consumer)
         @printf[I32]("trying to replay a message to a non-replayable
         runner!".cstring())
       end
+    else
+      @printf[I32]("|||NISAN Step.replay_log_entry ELSE\n".cstring())
     end
 
   be clear_deduplication_list() =>
@@ -460,10 +467,9 @@ actor Step is (Producer & Consumer)
       let oid: U128 = _id
       let uid: U128 = -1
       let statechange_id: U64 = -1
-      let seq_id: U64 = _seq_id_generator.new_id()
+      let seq_id: U64 = _seq_id_generator.last_id()
       _event_log.snapshot_state(oid, uid, statechange_id, seq_id,
         consume payload)
-      _acker_x.filtered(this, seq_id)
     else
       @printf[I32](("Could not complete log rotation. StateRunner is not " +
         "Serializable.\n").cstring())
