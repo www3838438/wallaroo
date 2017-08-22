@@ -16,6 +16,7 @@ use "wallaroo/recovery"
 use "wallaroo/routing"
 use "wallaroo/state"
 use "wallaroo/ent/w_actor"
+use "sendence/bytes"
 
 
 interface Runner
@@ -662,7 +663,9 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
     else
       try
         let sc = _state_change_repository(statechange_id)
+        @printf[I32]("||NISAN SR.RLE: _rb.size1: %d\n".cstring(), _rb.size())
         _rb.append(payload as Array[U8] val)
+        @printf[I32]("||NISAN SR.RLE: _rb.size2: %d\n".cstring(), _rb.size())
         try
           sc.read_log_entry(_rb)
           sc.apply(_state)
@@ -713,8 +716,16 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
       match state_change
       | let sc: StateChange[S] ref =>
         ifdef "resilience" then
+          @printf[I32]("||NISAN SC: wb.size1: %d\n".cstring(), _wb.size())
           sc.write_log_entry(_wb)
+          @printf[I32]("||NISAN SC: wb.size2: %d\n".cstring(), _wb.size())
           let payload = _wb.done()
+          try
+            let p0 = payload(0)
+            let u' = Bytes.to_u64(p0(0), p0(1), p0(2),
+            p0(3), p0(4), p0(5), p0(6), p0(7))
+            @printf[I32]("||NISAN SC: payload: %d\n".cstring(), u')
+          end
           match _id
           | let buffer_id: U128 =>
             _event_log.queue_log_entry(buffer_id, i_msg_uid, frac_ids,

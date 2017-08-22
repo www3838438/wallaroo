@@ -149,6 +149,7 @@ class WindowState is State
     end
 
   fun ref push(u: U64) =>
+    @printf[I32]("||NISAN WS.push: %d\n".cstring(), u)
     ring.push(u)
 
     ifdef "validate" then
@@ -205,6 +206,8 @@ class WindowStateChange is StateChange[WindowState]
     end
 
   fun write_log_entry(out_writer: Writer) =>
+    @printf[I32]("||NISAN write_log_entry: last_value: %d\n".cstring(),
+      _last_value)
     WindowStateEncoder(_last_value, out_writer)
 
   fun ref read_log_entry(in_reader: Reader) ? =>

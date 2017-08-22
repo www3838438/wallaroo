@@ -122,6 +122,8 @@ actor EventLog
     statechange_id: U64, seq_id: U64,
     payload: Array[ByteSeq] iso)
   =>
+    @printf[I32]("||NISAN queue log entry: seq_id :%d\n".cstring(),
+      seq_id)
     _queue_log_entry(origin_id, uid, frac_ids, statechange_id, seq_id,
       consume payload)
 
