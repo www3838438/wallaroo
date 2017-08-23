@@ -717,15 +717,10 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
       | let sc: StateChange[S] ref =>
         ifdef "resilience" then
           @printf[I32]("||NISAN SC: wb.size1: %d\n".cstring(), _wb.size())
-          sc.write_log_entry(_wb)
+          let foo = sc.write_log_entry(_wb)
           @printf[I32]("||NISAN SC: wb.size2: %d\n".cstring(), _wb.size())
-          let payload = _wb.done()
-          try
-            let p0 = payload(0)
-            let u' = Bytes.to_u64(p0(0), p0(1), p0(2),
-            p0(3), p0(4), p0(5), p0(6), p0(7))
-            @printf[I32]("||NISAN SC: payload: %d\n".cstring(), u')
-          end
+          //let payload = _wb.done()
+          let payload = foo.done()
           match _id
           | let buffer_id: U128 =>
             _event_log.queue_log_entry(buffer_id, i_msg_uid, frac_ids,

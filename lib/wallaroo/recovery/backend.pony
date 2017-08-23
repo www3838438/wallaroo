@@ -219,7 +219,17 @@ class FileBackend is Backend
   fun ref write(): USize ?
   =>
     let size = _writer.size()
-    if not _file.writev(recover val _writer.done() end) then
+    let zz = recover val _writer.done() end
+    for z in zz.values() do
+      if z.size() == 8 then
+        try
+            let u' = Bytes.to_u64(z(0), z(1), z(2),
+            z(3), z(4), z(5), z(6), z(7))
+            @printf[I32]("||write() payload: %d\n".cstring(), u')
+        end
+      end
+    end
+    if not _file.writev(zz) then
       error
     else
       _bytes_written = _bytes_written + size
@@ -243,12 +253,17 @@ class FileBackend is Backend
 
     _writer.bool(is_watermark)
     _writer.u128_be(origin_id)
+    @printf[I32]("||NISAN encode_entry: origin_id: %lu\n"
+      .cstring(), origin_id)
     _writer.u64_be(seq_id)
-    @printf[I32]("||NISAN encode_entry: seq_id: %d is_watermark: %s\n"
+    @printf[I32]("||NISAN encode_entry: seq_id: %du is_watermark: %s\n"
       .cstring(), seq_id, is_watermark.string().cstring())
 
     if not is_watermark then
       _writer.u128_be(uid)
+
+    @printf[I32]("||NISAN encode_entry: uid: %lu\n"
+      .cstring(), uid)
 
       match frac_ids
       | None =>
@@ -264,6 +279,9 @@ class FileBackend is Backend
         Fail()
       end
 
+    @printf[I32]("||NISAN encode_entry: state change id: %du\n"
+      .cstring(), statechange_id)
+
       _writer.u64_be(statechange_id)
       var payload_size: USize = 0
       for p in payload.values() do
@@ -275,20 +293,53 @@ class FileBackend is Backend
     // write data to write buffer
     //_writer.u64_be(2)
     try
+      _writer.size()
       let p = payload(0)
-      let u' = Bytes.to_u64(p(0), p(1), p(2), p(3), p(4), p(5), p(6), p(7))
+      /*let u' = Bytes.to_u64(p(0), p(1), p(2), p(3), p(4), p(5), p(6), p(7))
       @printf[I32]("||NISAN encode_entry writev(payload): %d\n".cstring(), u')
+      let zzz = recover val
+        let yyyyy = String
+        yyyyy.push(p(0))
+        yyyyy.push(p(1))
+        yyyyy.push(p(2))
+        yyyyy.push(p(3))
+        yyyyy.push(p(4))
+        yyyyy.push(p(5))
+        yyyyy.push(p(6))
+        yyyyy.push(p(7))
+        yyyyy
+      end*/
+     // _writer.write(p)
     end
     _writer.writev(payload)
-    let stuff = _writer.done()
+    /*let stuff = _writer.done()
     let stuff_sz = stuff.size()
     try
       let p = stuff(stuff_sz-1)
       let u' = Bytes.to_u64(p(0), p(1), p(2), p(3), p(4), p(5), p(6), p(7))
       @printf[I32]("||NISAN DONE(payload): %d\n".cstring(), u')
     end
-    _writer.writev(consume stuff)
-    // its bad here
+    //_writer.writev(consume stuff)
+    // its bad here*/
+
+    let zz = recover val _writer.done() end
+    for z in zz.values() do
+      if z.size() == 8 then
+        try
+            let u' = Bytes.to_u64(z(0), z(1), z(2),
+            z(3), z(4), z(5), z(6), z(7))
+            @printf[I32]("||encode after payload: %d\n".cstring(), u')
+          else
+            @printf[I32]("WHY AM I HERE\n".cstring())
+        end
+      else
+        if z.size() == 9 then
+          @printf[I32]("HELLO\n".cstring())
+        end
+      end
+    end
+    _writer.writev(zz)
+
 
   fun ref sync() ? =>
     _file.sync()

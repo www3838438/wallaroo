@@ -124,6 +124,28 @@ actor EventLog
   =>
     @printf[I32]("||NISAN queue log entry: seq_id :%d\n".cstring(),
       seq_id)
+   /* let xxx: Array[ByteSeq] val = consume payload
+    let yyy = recover iso Array[ByteSeq] end
+    for i in xxx.values() do
+      @printf[None]("yyy size is: %d\n".cstring(), i.size())
+      let zzzzzz = recover val
+        let a = String
+        try
+        a.push(i(0))
+        a.push(i(1))
+        a.push(i(2))
+        a.push(i(3))
+        a.push(i(4))
+        a.push(i(5))
+        a.push(i(6))
+        a.push(i(7))
+      end
+        a
+      end
+      yyy.push(zzzzzz)
+    end
+    _queue_log_entry(origin_id, uid, frac_ids, statechange_id, seq_id,
+      consume yyy)*/
     _queue_log_entry(origin_id, uid, frac_ids, statechange_id, seq_id,
       consume payload)
 
