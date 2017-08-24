@@ -322,6 +322,7 @@ actor ReconnectingMetricsSink
             end
           else
             // The connection failed, unsubscribe the event and close.
+            @printf[None]("Unsubscribe location 1\n".cstring())
             @pony_asio_event_unsubscribe(event)
             @pony_os_socket_close[None](fd)
             _notify_connecting()
@@ -354,12 +355,14 @@ actor ReconnectingMetricsSink
             end
           else
             // The connection failed, unsubscribe the event and close.
+            @printf[None]("Unsubscribe location 2\n".cstring())
             @pony_asio_event_unsubscribe(event)
             @pony_os_socket_close[None](fd)
             _notify_connecting()
           end
         else
           // We're already connected, unsubscribe the event and close.
+          @printf[None]("Unsubscribe location 3\n".cstring())
           @pony_asio_event_unsubscribe(event)
           @pony_os_socket_close[None](fd)
         end
@@ -751,6 +754,7 @@ actor ReconnectingMetricsSink
       // On windows, wait until all outstanding IOCP operations have completed
       // or been cancelled.
       if not _connected and not _readable and (_pending.size() == 0) then
+        @printf[None]("Unsubscribe location 4\n".cstring())
         @pony_asio_event_unsubscribe(_event)
       end
     end
@@ -770,6 +774,7 @@ actor ReconnectingMetricsSink
 
     ifdef not windows then
       // Unsubscribe immediately and drop all pending writes.
+      @printf[None]("Unsubscribe location 5\n".cstring())
       @pony_asio_event_unsubscribe(_event)
       _pending_writev.clear()
       _pending.clear()
