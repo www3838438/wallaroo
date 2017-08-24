@@ -216,8 +216,8 @@ class FileBackend is Backend
       Fail()
     end
 
-  fun ref write(): USize ?
-  =>
+  fun ref write(): USize  =>
+    /*
     let size = _writer.size()
     let zz = recover val _writer.done() end
     for z in zz.values() do
@@ -233,7 +233,7 @@ class FileBackend is Backend
       error
     else
       _bytes_written = _bytes_written + size
-    end
+    end*/
     _bytes_written
 
   fun ref encode_entry(entry: LogEntry)
@@ -287,12 +287,13 @@ class FileBackend is Backend
       for p in payload.values() do
         payload_size = payload_size + p.size()
       end
+      @printf[None]("|||||| payload size: %d\n".cstring(), payload_size.u64())
       _writer.u64_be(payload_size.u64())
     end
 
     // write data to write buffer
     //_writer.u64_be(2)
-    try
+    /*try
       _writer.size()
       let p = payload(0)
       /*let u' = Bytes.to_u64(p(0), p(1), p(2), p(3), p(4), p(5), p(6), p(7))
@@ -310,7 +311,8 @@ class FileBackend is Backend
         yyyyy
       end*/
      // _writer.write(p)
-    end
+    end*/
+
     _writer.writev(payload)
     /*let stuff = _writer.done()
     let stuff_sz = stuff.size()
@@ -326,16 +328,14 @@ class FileBackend is Backend
     for z in zz.values() do
       if z.size() == 8 then
         try
-            let u' = Bytes.to_u64(z(0), z(1), z(2),
-            z(3), z(4), z(5), z(6), z(7))
-            @printf[I32]("||encode after payload: %d\n".cstring(), u')
-          else
-            @printf[I32]("WHY AM I HERE\n".cstring())
+          let u' = Bytes.to_u64(z(0), z(1), z(2),
+          z(3), z(4), z(5), z(6), z(7))
+          @printf[I32]("||encode after payload: %d\n".cstring(), u')
+        else
+          @printf[I32]("WHY AM I HERE\n".cstring())
         end
       else
-        if z.size() == 9 then
           @printf[I32]("HELLO\n".cstring())
-        end
       end
     end
     _writer.writev(zz)
@@ -401,7 +401,7 @@ class RotatingFileBackend is Backend
 
   fun ref start_log_replay() => _backend.start_log_replay()
 
-  fun ref write(): USize ? =>
+  fun ref write(): USize =>
     let bytes_written = _backend.write()
     match _file_length
     | let l: USize =>

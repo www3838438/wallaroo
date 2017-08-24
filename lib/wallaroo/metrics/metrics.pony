@@ -267,6 +267,6 @@ class MetricsReporter
       end
        let metrics_ro = consume val metrics
        _metrics_monitor.on_send(metrics_ro)
-      _metrics_conn.send_metrics(metrics_ro)
+       _metrics_conn.send_metrics(metrics_ro)
       _period_ends_at = _next_period_endtime(now, _period)
     end

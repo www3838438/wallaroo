@@ -635,10 +635,11 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
   //TODO: this needs to be per-computation, rather than per-runner
   let _state_change_repository: StateChangeRepository[S] ref
   let _event_log: EventLog
-  let _wb: Writer = Writer
+  let _wb: Writer2 = Writer2
   let _rb: Reader = Reader
   let _auth: AmbientAuth
   var _id: (U128 | None)
+  var first: Bool = false
 
   new iso create(state_builder: {(): S} val,
       event_log: EventLog, auth: AmbientAuth)
@@ -719,8 +720,9 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
           @printf[I32]("||NISAN SC: wb.size1: %d\n".cstring(), _wb.size())
           let foo = sc.write_log_entry(_wb)
           @printf[I32]("||NISAN SC: wb.size2: %d\n".cstring(), _wb.size())
-          //let payload = _wb.done()
-          let payload = foo.done()
+          let payload = _wb.done()
+          //_wb.reserve(8)
+          //let payload = foo.done()
           match _id
           | let buffer_id: U128 =>
             _event_log.queue_log_entry(buffer_id, i_msg_uid, frac_ids,
@@ -735,7 +737,8 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
           // TODO: Replace this with calling provided serialization method
           match _id
           | let buffer_id: U128 =>
-            _state.write_log_entry(_wb, _auth)
+            @printf[None]("LOG ENNNNTRY\n\n\n".cstring())
+            //_state.write_log_entry(_wb, _auth)
             let payload = _wb.done()
             _event_log.queue_log_entry(buffer_id, i_msg_uid, frac_ids,
               U64.max_value(), producer.current_sequence_id(), consume payload)
