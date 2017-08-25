@@ -10,7 +10,7 @@ trait StateChange[S: State ref]
   fun name(): String val
   fun id(): U64
   fun apply(state: S)
-  fun ref write_log_entry(out_writer: Writer2): Writer
+  fun ref write_log_entry(out_writer: Writer): Writer
   fun ref read_log_entry(in_reader: Reader) ?
 
 primitive DirectStateChange
@@ -19,7 +19,7 @@ class EmptyStateChange[S: State ref] is StateChange[S]
   fun name(): String val => ""
   fun id(): U64 => 0
   fun apply(state: S) => None
-  fun ref write_log_entry(out_writer: Writer2): Writer => Writer
+  fun ref write_log_entry(out_writer: Writer): Writer => Writer
   fun ref read_log_entry(in_reader: Reader) => None
 
 trait val StateChangeBuilder[S: State ref]

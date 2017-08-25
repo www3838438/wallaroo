@@ -205,7 +205,7 @@ class WindowStateChange is StateChange[WindowState]
       "Error: failed to convert sequence window into a string."
     end
 
-  fun ref write_log_entry(out_writer: Writer2): Writer =>
+  fun ref write_log_entry(out_writer: Writer): Writer =>
     @printf[I32]("||NISAN write_log_entry: last_value: %d\n".cstring(),
       _last_value)
     let x = Writer
