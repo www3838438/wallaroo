@@ -281,7 +281,9 @@ class FileBackend is Backend
 
     @printf[I32]("||NISAN encode_entry: state change id: %du\n"
       .cstring(), statechange_id)
-
+    try
+    @printf[None]("PAYLOAD IS AT: %p\n".cstring(), payload(0).cpointer())
+    end
       _writer.u64_be(statechange_id)
       var payload_size: USize = 0
       for p in payload.values() do

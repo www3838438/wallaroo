@@ -635,7 +635,7 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner & SerializableStat
   //TODO: this needs to be per-computation, rather than per-runner
   let _state_change_repository: StateChangeRepository[S] ref
   let _event_log: EventLog
-  let _wb: Writer = Writer
+  let _wb: Writer2 = Writer2
   let _rb: Reader = Reader
   let _auth: AmbientAuth
   var _id: (U128 | None)

@@ -205,14 +205,10 @@ class WindowStateChange is StateChange[WindowState]
       "Error: failed to convert sequence window into a string."
     end
 
-  fun ref write_log_entry(out_writer: Writer): Writer =>
+  fun ref write_log_entry(out_writer: Writer2): Writer2 =>
     @printf[I32]("||NISAN write_log_entry: last_value: %d\n".cstring(),
       _last_value)
-    let x = Writer
-    x.u64_be(_last_value)
     out_writer.u64_be(_last_value)
-    //WindowStateEncoder(_last_value, out_writer)
-    consume x
 
   fun ref read_log_entry(in_reader: Reader) ? =>
     _last_value = WindowStateDecoder(in_reader)
@@ -228,8 +224,8 @@ primitive ObserveNewValue is StateComputation[U64 val, String val, WindowState]
     sc_repo: StateChangeRepository[WindowState],
     state: WindowState): ((String val | None), StateChange[WindowState] ref)
   =>
-    @printf[I32]("||NISAN ONV.apply State: %s, val: %s\n".cstring(),
-      state.string().cstring(), u.string().cstring())
+    //@printf[I32]("||NISAN ONV.apply State: %s, val: %s\n".cstring(),
+     // state.string().cstring(), u.string().cstring())
     let state_change: WindowStateChange ref =
       try
         sc_repo.lookup_by_name("UpdateWindow") as WindowStateChange
@@ -240,7 +236,7 @@ primitive ObserveNewValue is StateComputation[U64 val, String val, WindowState]
 
     // TODO: This is ugly since this is where we need to simulate the state
     // change in order to produce a result
-    (state_change.string(state), state_change)
+    ("1", state_change)
     //(None, state_change)
 
   fun state_change_builders():

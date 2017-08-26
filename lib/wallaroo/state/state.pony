@@ -3,7 +3,7 @@ use "serialise"
 use "wallaroo/fail"
 
 trait ref State
-  fun write_log_entry(out_writer: Writer, auth: AmbientAuth) =>
+  fun write_log_entry(out_writer: Writer2, auth: AmbientAuth) =>
     try
       let serialized =
         Serialised(SerialiseAuth(auth), this).output(OutputSerialisedAuth(auth))
