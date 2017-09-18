@@ -43,7 +43,6 @@ use "wallaroo/core/metrics"
 use "wallaroo/core/routing"
 use "wallaroo/core/topology"
 
-
 use @pony_asio_event_create[AsioEventID](owner: AsioEventNotify, fd: U32,
   flags: U32, nsec: U64, noisy: Bool, auto_resub: Bool)
 use @pony_asio_event_fd[U32](event: AsioEventID)
@@ -383,7 +382,7 @@ actor TCPSource is Producer
     @pony_asio_event_unsubscribe(_event)
     _readable = false
     ifdef linux then
-      AsioEvent.set_readable(_event, false)
+      @pony_asio_event_set_readable[None](_event, false)
     end
 
 
@@ -436,7 +435,7 @@ actor TCPSource is Producer
           ifdef linux then
             // this is safe because asio thread isn't currently subscribed
             // for a read event so will not be writing to the readable flag
-            AsioEvent.set_readable(_event, false)
+            @pony_asio_event_set_readable[None](_event, false)
             _readable = false
             @pony_asio_event_resubscribe_read(_event)
           else
