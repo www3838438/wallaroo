@@ -43,7 +43,7 @@ use "wallaroo/core/messages"
 use "wallaroo/core/metrics"
 use "wallaroo/core/routing"
 use "wallaroo/core/topology"
-use "wallaroo_labs/asio_event"
+
 
 use @pony_asio_event_create[AsioEventID](owner: AsioEventNotify, fd: U32,
   flags: U32, nsec: U64, noisy: Bool, auto_resub: Bool)
@@ -529,8 +529,8 @@ actor TCPSink is Consumer
     _readable = false
     _writeable = false
     ifdef linux then
-      AsioEventHelper.set_readable(_event, false)
-      AsioEventHelper.set_writeable(_event, false)
+      AsioEvent.set_readable(_event, false)
+      AsioEvent.set_writeable(_event, false)
     end
 
     @pony_os_socket_close[None](_fd)
@@ -566,7 +566,7 @@ actor TCPSink is Consumer
           ifdef linux then
             // this is safe because asio thread isn't currently subscribed
             // for a read event so will not be writing to the readable flag
-            AsioEventHelper.set_readable(_event, false)
+            AsioEvent.set_readable(_event, false)
             _readable = false
             @pony_asio_event_resubscribe_read(_event)
           else
@@ -801,7 +801,7 @@ actor TCPSink is Consumer
       ifdef linux then
         // this is safe because asio thread isn't currently subscribed
         // for a write event so will not be writing to the readable flag
-        AsioEventHelper.set_writeable(_event, false)
+        AsioEvent.set_writeable(_event, false)
         @pony_asio_event_resubscribe_write(_event)
       end
       _notify.throttled(this)

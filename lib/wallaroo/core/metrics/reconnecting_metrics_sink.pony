@@ -33,7 +33,7 @@ use "net"
 use "time"
 use "wallaroo_labs/hub"
 use "wallaroo_labs/mort"
-use "wallaroo_labs/asio_event"
+
 
 use @pony_asio_event_create[AsioEventID](owner: AsioEventNotify, fd: U32,
   flags: U32, nsec: U64, noisy: Bool, auto_resub: Bool)
@@ -669,7 +669,7 @@ actor ReconnectingMetricsSink
           ifdef linux then
             // this is safe because asio thread isn't currently subscribed
             // for a read event so will not be writing to the readable flag
-            AsioEventHelper.set_readable(_event, false)
+            AsioEvent.set_readable(_event, false)
             _readable = false
             @pony_asio_event_resubscribe_read(_event)
           else
@@ -811,8 +811,8 @@ actor ReconnectingMetricsSink
       _readable = false
       _writeable = false
       ifdef linux then
-        AsioEventHelper.set_readable(_event, false)
-        AsioEventHelper.set_writeable(_event, false)
+        AsioEvent.set_readable(_event, false)
+        AsioEvent.set_writeable(_event, false)
       end
     end
 
@@ -853,7 +853,7 @@ actor ReconnectingMetricsSink
         ifdef linux then
           // this is safe because asio thread isn't currently subscribed
           // for a write event so will not be writing to the readable flag
-          AsioEventHelper.set_writeable(_event, false)
+          AsioEvent.set_writeable(_event, false)
           @pony_asio_event_resubscribe_write(_event)
         end
       end
