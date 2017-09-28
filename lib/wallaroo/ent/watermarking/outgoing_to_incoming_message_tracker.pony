@@ -55,7 +55,9 @@ class ref _OutgoingToIncomingMessageTracker
     try
       for i in Reverse(index, 0) do
         (let o, let r, let s) = _seq_id_to_incoming(i)._2
-        high_by_producer_route.insert_if_absent((o, r), s)
+        if not high_by_producer_route.contains((o, r)) then
+          high_by_producer_route((o, r)) = s
+        end
       end
     else
       Fail()
