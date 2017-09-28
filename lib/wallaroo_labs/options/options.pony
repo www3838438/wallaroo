@@ -340,12 +340,12 @@ class _ErrorPrinter
 
   new _ambiguous(matches: Array[_Option]) =>
     let m = recover String end
-    m.append("Ambiguous options:\n")
+    m.>append("Ambiguous options:\n")
 
     for opt in matches.values() do
-      m.append("  --" + opt.long)
-      try m.append(", -" + (opt.short as String)) end
-      m.append("\n")
+      m.>append("  --" + opt.long)
+      try m.>append(", -" + (opt.short as String)) end
+      m.>append("\n")
     end
 
     _message = consume m

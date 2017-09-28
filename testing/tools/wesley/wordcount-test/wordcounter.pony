@@ -76,6 +76,6 @@ class WordCounter is CanonicalForm
     """Return the string representation of the map"""
     var pairs = Array[String]()
     for (word, count) in counts.pairs() do
-      pairs.append([word + ": " + count.string()])
+      pairs.>append([word + ": " + count.string()])
     end
     "{ " + ", ".join(pairs) + " }"

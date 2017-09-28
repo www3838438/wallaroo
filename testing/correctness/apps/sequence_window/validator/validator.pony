@@ -139,9 +139,9 @@ class WindowValidator
 
     let val_string: String val = recover
       var s: Array[U8] iso = recover Array[U8] end
-      s.append("[")
-      s.append(",".join(values))
-      s.append("]")
+      s.>append("[")
+      s.>append(",".join(values))
+      s.>append("]")
       String.from_array(consume s)
     end
 
@@ -384,7 +384,7 @@ class ReceiverFileDataSource is Iterator[Array[U8] val]
     let h = _file.read(12)
     try
       let expect: USize = Bytes.to_u32(h(0), h(1), h(2), h(3)).usize()
-      h.append(_file.read(expect))
+      h.>append(_file.read(expect))
       h
     else
       ifdef debug then

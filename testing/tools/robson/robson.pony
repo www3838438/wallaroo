@@ -163,7 +163,7 @@ actor MetricsCollector
       let input: Array[U8] val = input_file.read(input_file.size())
 
       let rb = Reader
-      rb.append(input)
+      rb.>append(input)
       var bytes_left = input.size()
 
       while bytes_left > 0 do
@@ -345,17 +345,17 @@ class MetricsData
 
   fun ref print_stats(): String iso^ =>
     let header = (TextFormatter.secondary_header()).clone()
-      .append("Stats for: ")
-      .append(name)
-      .append(TextFormatter.line_break())
-      .append(TextFormatter.secondary_header())
-      .append("Initial metric timestamp: ")
-      .append(min_period_ends_at.string())
-      .append(TextFormatter.line_break())
-      .append("Final metric timestamp:   ")
-      .append(max_period_ends_at.string())
-      .append(TextFormatter.line_break())
-      .append(TextFormatter.line_break())
+      .>append("Stats for: ")
+      .>append(name)
+      .>append(TextFormatter.line_break())
+      .>append(TextFormatter.secondary_header())
+      .>append("Initial metric timestamp: ")
+      .>append(min_period_ends_at.string())
+      .>append(TextFormatter.line_break())
+      .>append("Final metric timestamp:   ")
+      .>append(max_period_ends_at.string())
+      .>append(TextFormatter.line_break())
+      .>append(TextFormatter.line_break())
 
 
     let throughput_stats_text = if throughput_stats is None then
@@ -370,8 +370,8 @@ class MetricsData
       latency_stats.string()
     end
 
-    header.append(throughput_stats_text)
-      .append(latency_stats_text).clone()
+    header.>append(throughput_stats_text)
+      .>append(latency_stats_text).clone()
 
 
 class ThroughputStats
@@ -430,22 +430,22 @@ class ThroughputStats
       else
         return "Under 100".clone()
       end
-    formatted_throughput.clone().append("k").clone()
+    formatted_throughput.clone().>append("k").clone()
 
   fun string(): String iso^ =>
     (TextFormatter.secondary_header()).clone()
-      .append("Throughput Stats\n")
-      .append(TextFormatter.secondary_header())
-      .append("Minimum Throughput per sec: ")
-      .append(format_throughput(min_throughput_per_sec))
-      .append(TextFormatter.line_break())
-      .append("Average Throughput per sec: ")
-      .append(format_throughput(avg_throughput_per_sec))
-      .append(TextFormatter.line_break())
-      .append("Maximum Throughput per sec: ")
-      .append(format_throughput(max_throughput_per_sec))
-      .append(TextFormatter.line_break())
-      .append(TextFormatter.line_break())
+      .>append("Throughput Stats\n")
+      .>append(TextFormatter.secondary_header())
+      .>append("Minimum Throughput per sec: ")
+      .>append(format_throughput(min_throughput_per_sec))
+      .>append(TextFormatter.line_break())
+      .>append("Average Throughput per sec: ")
+      .>append(format_throughput(avg_throughput_per_sec))
+      .>append(TextFormatter.line_break())
+      .>append("Maximum Throughput per sec: ")
+      .>append(format_throughput(max_throughput_per_sec))
+      .>append(TextFormatter.line_break())
+      .>append(TextFormatter.line_break())
       .clone()
 
 class LatencyStats
@@ -527,30 +527,30 @@ class LatencyStats
 
   fun string(): String iso^ =>
     (TextFormatter.secondary_header()).clone()
-      .append("Latency Stats\n")
-      .append(TextFormatter.secondary_header())
-      .append("   50% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_50_percent))
-      .append(TextFormatter.line_break())
-      .append("   75% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_75_percent))
-      .append(TextFormatter.line_break())
-      .append("   90% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_90_percent))
-      .append(TextFormatter.line_break())
-      .append("   95% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_95_percent))
-      .append(TextFormatter.line_break())
-      .append("   99% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_99_percent))
-      .append(TextFormatter.line_break())
-      .append(" 99.9% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_99_9_percent))
-      .append(TextFormatter.line_break())
-      .append("99.99% of latencies are: ")
-      .append(_bin_to_time_converter.get_time_for_bin(_bin_at_99_99_percent))
-      .append(TextFormatter.line_break())
-      .append(TextFormatter.line_break())
+      .>append("Latency Stats\n")
+      .>append(TextFormatter.secondary_header())
+      .>append("   50% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_50_percent))
+      .>append(TextFormatter.line_break())
+      .>append("   75% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_75_percent))
+      .>append(TextFormatter.line_break())
+      .>append("   90% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_90_percent))
+      .>append(TextFormatter.line_break())
+      .>append("   95% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_95_percent))
+      .>append(TextFormatter.line_break())
+      .>append("   99% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_99_percent))
+      .>append(TextFormatter.line_break())
+      .>append(" 99.9% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_99_9_percent))
+      .>append(TextFormatter.line_break())
+      .>append("99.99% of latencies are: ")
+      .>append(_bin_to_time_converter.get_time_for_bin(_bin_at_99_99_percent))
+      .>append(TextFormatter.line_break())
+      .>append(TextFormatter.line_break())
       .clone()
 
   primitive TextFormatter

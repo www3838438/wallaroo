@@ -178,7 +178,7 @@ primitive ExternalMsgDecoder
 
   fun _decode(data: Array[U8] val): (U16, String) ? =>
     let rb = Reader
-    rb.append(data)
+    rb.>append(data)
     let id = rb.u16_be()
     let s_len = data.size() - 2
     let s = String.from_array(rb.block(s_len))

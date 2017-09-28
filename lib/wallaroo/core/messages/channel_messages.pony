@@ -459,7 +459,7 @@ class val ReplayMsg is ChannelMsg
 
     let buffer = recover trn Array[U8](size) end
     for bytes in data_bytes.values() do
-      buffer.append(bytes)
+      buffer.>append(bytes)
     end
 
     // trim first 4 bytes that are for size of tcp header

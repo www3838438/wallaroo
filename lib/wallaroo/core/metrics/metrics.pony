@@ -150,13 +150,13 @@ class MetricsReporter
       let str_size = _worker_name.size() + pipeline.size() + name.size() +
         prefix.size() + 6
       let metric_name_tmp = recover String(str_size) end
-      metric_name_tmp.append(pipeline)
-      metric_name_tmp.append(_worker_name)
-      metric_name_tmp.append(id.string())
+      metric_name_tmp.>append(pipeline)
+      metric_name_tmp.>append(_worker_name)
+      metric_name_tmp.>append(id.string())
       if prefix != "" then
-        metric_name_tmp.append(prefix)
+        metric_name_tmp.>append(prefix)
       end
-      metric_name_tmp.append(name)
+      metric_name_tmp.>append(name)
       consume metric_name_tmp
     else
       name

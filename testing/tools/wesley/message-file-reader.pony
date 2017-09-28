@@ -108,7 +108,7 @@ class ReceivedMessageFileReader
   """
   """
     let rb: Reader = Reader
-    rb.append(input)
+    rb.>append(input)
     var bytes_left = input.size()
     while bytes_left > 0 do
       // Msg size, msg size u32, and timestamp together make up next payload

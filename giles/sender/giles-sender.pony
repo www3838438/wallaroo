@@ -620,9 +620,9 @@ class SentLogEncoder
 
     recover
       String(time.size() + ", ".size() + payload.size())
-      .append(time)
-      .append(", ")
-      .append(payload)
+      .>append(time)
+      .>append(", ")
+      .>append(payload)
     end
 
 //

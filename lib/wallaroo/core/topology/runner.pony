@@ -683,7 +683,7 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner &
     else
       try
         let sc = _state_change_repository(statechange_id)
-        _rb.append(payload as Array[U8] val)
+        _rb.>append(payload as Array[U8] val)
         try
           sc.read_log_entry(_rb)
           sc.apply(_state)
@@ -791,7 +791,7 @@ class StateRunner[S: State ref] is (Runner & ReplayableRunner &
 
   fun ref replace_serialized_state(payload: ByteSeq val) =>
     try
-      _rb.append(payload as Array[U8] val)
+      _rb.>append(payload as Array[U8] val)
       match _state.read_log_entry(_rb, _auth)
       | let s: S =>
         _state = s

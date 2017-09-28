@@ -73,5 +73,5 @@ primitive FahrenheitEncoder
 primitive CelsiusKafkaDecoder is SourceHandler[F32]
   fun decode(a: Array[U8] val): F32 ? =>
     let r = Reader
-    r.append(a)
+    r.>append(a)
     r.f32_be()

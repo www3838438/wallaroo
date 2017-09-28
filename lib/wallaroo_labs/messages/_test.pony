@@ -40,7 +40,7 @@ class iso _TestFallorMsgEncoder is UnitTest
     for bs in byteseqs.values() do
       match bs
       | let str: String =>
-        bytes.append(str.array())
+        bytes.>append(str.array())
       | let arr_b: Array[U8] val =>
         for b in arr_b.values() do
           if header_count > 0 then
@@ -67,7 +67,7 @@ class iso _TestFallorTimestampRaw is UnitTest
     let at: U64 = 1234567890
     let msg: Array[U8] val = recover val
       let a': Array[U8] = Array[U8]
-      a'.append(text)
+      a'.>append(text)
       a'
     end
     let byteseqs = FallorMsgEncoder.timestamp_raw(at, consume msg)
@@ -75,7 +75,7 @@ class iso _TestFallorTimestampRaw is UnitTest
     // the byteseqs into a single Array[U8]
     let encoded: Array[U8] iso = recover Array[U8] end
     for seq in byteseqs.values() do
-      encoded.append(seq)
+      encoded.>append(seq)
     end
     let tup = FallorMsgDecoder.with_timestamp(consume encoded)
     h.assert_eq[USize](tup.size(), 2)

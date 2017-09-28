@@ -153,8 +153,8 @@ actor OrderFileGenerator
     _wb.reserve_chunks(_file_limit)
     _output_path = recover val
       _output_folder.clone()
-        .append(_file_counter.string())
-        .append(_file_extension)
+        .>append(_file_counter.string())
+        .>append(_file_extension)
     end
 
   be write_to_files() =>
@@ -178,8 +178,8 @@ actor OrderFileGenerator
       _file_counter = _file_counter + 1
       _output_path = recover val
         _output_folder.clone()
-          .append(_file_counter.string())
-          .append(_file_extension)
+          .>append(_file_counter.string())
+          .>append(_file_extension)
       end
       var new_output_file = File(FilePath(_auth, _output_path))
       new_output_file.set_length(0)

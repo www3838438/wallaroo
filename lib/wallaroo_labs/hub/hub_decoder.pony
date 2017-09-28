@@ -35,7 +35,7 @@ primitive HubProtocolDecoder
 
   fun _decode(data: Array[U8 val] val): (U8, Array[U8 val] val) ? =>
     let rb = Reader
-    rb.append(data)
+    rb.>append(data)
     let msg_id = rb.u8()
     let data_len = data.size() - 1
     let data' = rb.block(data_len)
@@ -56,7 +56,7 @@ primitive HubPayloadMsg is HubProtocolMsg
   fun apply(data: Array[U8] val): HubProtocolMsg =>
     try
       let rb = Reader
-      rb.append(data)
+      rb.>append(data)
       let event_size = rb.u32_be().usize()
       let event = String.from_array(rb.block(event_size))
       let topic_size = rb.u32_be().usize()
@@ -89,7 +89,7 @@ class val HubMetricsMsg is HubProtocolMsg
   new val create(data: Array[U8] val) ? =>
     try
       let rb = Reader
-      rb.append(data)
+      rb.>append(data)
       let header_size = rb.u32_be().usize()
       let name_size = rb.u32_be().usize()
       name = String.from_array(rb.block(name_size))

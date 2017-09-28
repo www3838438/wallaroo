@@ -61,7 +61,7 @@ actor Main
       if readable then
         let input: Array[U8] val = input_file.read(input_file.size())
         let rb = Reader
-        rb.append(input)
+        rb.>append(input)
         var left = input.size()
         while left > 0 do
           let size = rb.u32_be().usize()

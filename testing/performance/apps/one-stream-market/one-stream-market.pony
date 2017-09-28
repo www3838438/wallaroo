@@ -252,13 +252,13 @@ class NbboResult
     timestamp = timestamp'
 
   fun string(): String =>
-    (nbbo.symbol().clone().append(", ")
-      .append(nbbo.bid_px().string()).append(", ")
-      .append(nbbo.offer_px().string()).append(", ")
-      .append(nbbo.mid().string()).append(", ")
-      .append(bid.string()).append(", ")
-      .append(offer.string()).append(", ")
-      .append(timestamp.string())).clone()
+    (nbbo.symbol().clone().>append(", ")
+      .>append(nbbo.bid_px().string()).>append(", ")
+      .>append(nbbo.offer_px().string()).>append(", ")
+      .>append(nbbo.mid().string()).>append(", ")
+      .>append(bid.string()).>append(", ")
+      .>append(offer.string()).>append(", ")
+      .>append(timestamp.string())).clone()
 
 primitive NbboResultEncoder
   fun apply(r: NbboResult val, wb: Writer = Writer): Array[ByteSeq] val =>

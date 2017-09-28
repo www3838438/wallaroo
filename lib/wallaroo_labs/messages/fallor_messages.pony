@@ -66,7 +66,7 @@ primitive FallorMsgDecoder
 
   fun _decode(data: Array[U8] val): Array[String] val ? =>
     let rb = Reader
-    rb.append(data)
+    rb.>append(data)
     var total_size = rb.u32_be()
     let arr: Array[String] iso = recover Array[String](total_size.usize()) end
 
@@ -83,7 +83,7 @@ primitive FallorMsgDecoder
   fun with_timestamp(data: Array[U8] val): Array[String] val ? =>
     let arr: Array[String] iso = recover Array[String] end
     let rb = Reader
-    rb.append(data)
+    rb.>append(data)
     var bytes_left = rb.u32_be()
     let timestamp = rb.u64_be()
     arr.push(timestamp.string())

@@ -66,13 +66,13 @@ class iso _TestWindowState is UnitTest
     let byteseqs: Array[ByteSeq] val = out_writer.done()
     let s = recover Array[U8] end
     for bs in byteseqs.values() do
-      s.append(bs)
+      s.>append(bs)
     end
     // Expecting: 1xU64
     h.assert_eq[USize](8, s.size())
 
     // Decode
     let in_reader: Reader = Reader
-    in_reader.append(consume s)
+    in_reader.>append(consume s)
     let decoded_value: U64 = WindowStateDecoder(in_reader)
     h.assert_eq[U64](last_value, decoded_value)

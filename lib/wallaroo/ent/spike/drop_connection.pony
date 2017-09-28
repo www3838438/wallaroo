@@ -116,16 +116,16 @@ class DropConnection is WallarooOutgoingNetworkActorNotify
   fun _print_counts() =>
     try
       let a: Array[U8] iso = recover Array[U8] end
-      a.append("SPIKE Counts: {")
+      a.>append("SPIKE Counts: {")
       for (k, v) in _c.pairs() do
-        a.append(k)
-        a.append(": ")
-        a.append(v.string())
-        a.append(", ")
+        a.>append(k)
+        a.>append(": ")
+        a.>append(v.string())
+        a.>append(", ")
       end
       a.pop()
       a.pop()
-      a.append("}\n")
+      a.>append("}\n")
       let s = String.from_array(consume a)
       @printf[I32](s.cstring())
     end

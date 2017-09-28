@@ -195,8 +195,8 @@ primitive RunningTotalEncoder
     // Option A: Write out output as String
     let result =
       recover val
-        String().append(t.word).append(", ").append(t.count.string())
-          .append("\n")
+        String().>append(t.word).>append(", ").>append(t.count.string())
+          .>append("\n")
       end
     @printf[I32]("!!%s".cstring(), result.cstring())
     wb.write(result)

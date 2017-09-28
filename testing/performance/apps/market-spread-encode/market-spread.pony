@@ -332,15 +332,15 @@ class OrderResult
     timestamp = timestamp'
 
   fun string(): String =>
-    (order.symbol().clone().append(", ")
-      .append(order.order_id()).append(", ")
-      .append(order.account().string()).append(", ")
-      .append(order.price().string()).append(", ")
-      .append(order.order_qty().string()).append(", ")
-      .append(order.side().string()).append(", ")
-      .append(bid.string()).append(", ")
-      .append(offer.string()).append(", ")
-      .append(timestamp.string())).clone()
+    (order.symbol().clone().>append(", ")
+      .>append(order.order_id()).>append(", ")
+      .>append(order.account().string()).>append(", ")
+      .>append(order.price().string()).>append(", ")
+      .>append(order.order_qty().string()).>append(", ")
+      .>append(order.side().string()).>append(", ")
+      .>append(bid.string()).>append(", ")
+      .>append(offer.string()).>append(", ")
+      .>append(timestamp.string())).clone()
 
 primitive EmptyEncoder
   fun apply(a: Array[ByteSeq] val, wb: Writer = Writer): Array[ByteSeq] val =>

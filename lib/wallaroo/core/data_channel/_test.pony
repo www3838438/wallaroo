@@ -208,7 +208,7 @@ class _TestDataChannelExpectNotify is DataChannelNotify
     buf = recover Array[U8] end
     buf.push((len >> 8).u8())
     buf.push((len >> 0).u8())
-    buf.append(data)
+    buf.>append(data)
     conn.write(consume buf)
 
 class iso _TestDataChannelWritev is UnitTest
@@ -255,7 +255,7 @@ class _TestDataChannelWritevNotifyServer is DataChannelNotify
   fun ref received(conn: DataChannel ref, data: Array[U8] iso,
     n: USize): Bool
   =>
-    _buffer.append(consume data)
+    _buffer.>append(consume data)
 
     let expected = "hello, hello (from client)"
 

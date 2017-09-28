@@ -148,7 +148,7 @@ class FileBackend is Backend
 
         //start iterating until we reach original EOF
         while _file.position() < size do
-          r.append(_file.read(25))
+          r.>append(_file.read(25))
           let is_watermark = BoolConverter.u8_to_bool(r.u8())
           let producer_id = r.u128_be()
           let seq_id = r.u64_be()
@@ -167,13 +167,13 @@ class FileBackend is Backend
             // save last watermark read from file
             watermarks_trn(producer_id) = seq_id
           else
-            r.append(_file.read(24))
+            r.>append(_file.read(24))
             let uid = r.u128_be()
             let fractional_size = r.u64_be()
             let frac_ids = recover val
               if fractional_size > 0 then
                 let bytes_to_read = fractional_size.usize() * 4
-                r.append(_file.read(bytes_to_read))
+                r.>append(_file.read(bytes_to_read))
                 let l = Array[U32]
                 for i in Range(0,fractional_size.usize()) do
                   l.push(r.u32_be())
@@ -185,7 +185,7 @@ class FileBackend is Backend
                 None
               end
             end
-            r.append(_file.read(16))
+            r.>append(_file.read(16))
             let statechange_id = r.u64_be()
             let payload_length = r.u64_be()
             let payload = recover val
