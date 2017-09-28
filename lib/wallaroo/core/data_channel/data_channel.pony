@@ -137,7 +137,7 @@ actor DataChannel
     _fd = fd
     ifdef linux then
       _event = @pony_asio_event_create(this, fd,
-        AsioEvent.read_write_oneshot(), 0, true, true)
+        (1 << 0) or (1 << 1) or (1 << 8), 0, true, true)
     else
       _event = @pony_asio_event_create(this, fd,
         AsioEvent.read_write(), 0, true, false)
