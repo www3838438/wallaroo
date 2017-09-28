@@ -307,7 +307,7 @@ class FileBackend is Backend
     end
 
   fun ref datasync() ? =>
-    _file.datasync()
+    _file.sync()
     match _file.errno()
     | FileOK => None
     else
