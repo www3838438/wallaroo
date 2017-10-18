@@ -1,8 +1,5 @@
 language: c
 
-rvm:
-  - 2.2.3
-
 notifications:
   email: false
   slack:
@@ -12,10 +9,8 @@ branches:
   only:
     - master
     - release
-    - /^release-(\d).(\d).(\d)-rc(\d)+$/
     - /^release-(\d).(\d).(\d)$/
 
-dist: trusty
 sudo: required
 
 matrix:
@@ -26,18 +21,21 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
-            - g++-5
+            - g++-6
       env:
         - LLVM_VERSION="3.9.1"
         - LLVM_CONFIG="llvm-config-3.9"
-        - CC1=gcc-5
-        - CXX1=g++-5
-        - lto=no
+        - config=release
+        - CC1=gcc
+        - CXX1=g++
+        - ICC1=gcc-6
+        - ICXX1=g++-6
 
 before_install:
 - echo -e "machine github.com\n  login $CI_USER_TOKEN" >> ~/.netrc
 
 install:
+  - bash .travis_install.bash
   # Based on how travis-ci works, when this is run, we are in the source
   # directory for Wallaroo. This means, when we go to git clone and install
   # dependencies, we need to leave that directory and then return to it when
