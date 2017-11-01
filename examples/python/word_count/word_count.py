@@ -27,41 +27,35 @@ def application_setup(args):
 
     ab = wallaroo.ApplicationBuilder("Word Count Application")
     ab.new_pipeline("Split and Count",
-                    wallaroo.TCPSourceConfig(in_host, in_port, Decoder()))
-    ab.to_parallel(Split)
-    ab.to_state_partition(CountWord(), WordTotalsBuilder(), "word totals",
-        WordPartitionFunction(), word_partitions)
-    ab.to_sink(wallaroo.TCPSinkConfig(out_host, out_port, Encoder()))
+                    wallaroo.TCPSourceConfig(in_host, in_port, decoder))
+    ab.to_parallel(split)
+    ab.to_state_partition(count_word, WordTotals, "word totals",
+        partition, word_partitions)
+    ab.to_sink(wallaroo.TCPSinkConfig(out_host, out_port, encoder))
     return ab.build()
 
+@wallaroo.computation_multi(name="split into words")
+def split(data):
+    punctuation = " !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
 
-class Split(object):
-    def name(self):
-        return "split into words"
+    words = []
 
-    def compute_multi(self, data):
-        punctuation = " !\"#$%&'()*+,-./:;<=>?@[\]^_`{|}~"
+    for line in data.split("\n"):
+        clean_line = line.lower().strip(punctuation)
+        for word in clean_line.split(' '):
+            clean_word = word.strip(punctuation)
+            words.append(clean_word)
 
-        words = []
-
-        for line in data.split("\n"):
-            clean_line = line.lower().strip(punctuation)
-            for word in clean_line.split(' '):
-                clean_word = word.strip(punctuation)
-                words.append(clean_word)
-
-        return words
+    return words
 
 
-class CountWord(object):
-    def name(self):
-        return "Count Word"
-
-    def compute(self, word, word_totals):
-        word_totals.update(word)
-        return (word_totals.get_count(word), True)
+@wallaroo.state_computation(name="Count Word")
+def count_word(word, word_totals):
+    word_totals.update(word)
+    return (word_totals.get_count(word), True)
 
 
+@wallaroo.state
 class WordTotals(object):
     def __init__(self):
         self.word_totals = {}
@@ -82,30 +76,19 @@ class WordCount(object):
         self.count = count
 
 
-class WordTotalsBuilder(object):
-    def build(self):
-        return WordTotals()
+@wallaroo.partition
+def partition(data):
+    if data[0] >= 'a' or data[0] <= 'z':
+        return data[0]
+    else:
+        return "!"
 
 
-class WordPartitionFunction(object):
-    def partition(self, data):
-        if data[0] >= 'a' or data[0] <= 'z':
-          return data[0]
-        else:
-          return "!"
+@wallaroo.decoder(header_length=4, length_fmt=">I")
+def decoder(bs):
+    return bs.decode("utf-8")
 
 
-class Decoder(object):
-    def header_length(self):
-        return 4
-
-    def payload_length(self, bs):
-        return struct.unpack(">I", bs)[0]
-
-    def decode(self, bs):
-        return bs.decode("utf-8")
-
-
-class Encoder(object):
-    def encode(self, data):
-        return data.word + " => " + str(data.count) + "\n"
+@wallaroo.encoder
+def encoder(data):
+    return data.word + " => " + str(data.count) + "\n"
