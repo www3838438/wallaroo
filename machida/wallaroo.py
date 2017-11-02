@@ -14,9 +14,10 @@
 
 
 import argparse
+from functools import wraps
 import inspect
 import pickle
-
+import struct
 
 def serialize(o):
     return pickle.dumps(o)
@@ -107,6 +108,7 @@ class ApplicationBuilder(object):
 
 def computation(name):
     def wrapped(computation_function):
+        @wraps(computation_function)
         class C:
             def name(self):
                 return name
@@ -120,6 +122,7 @@ def computation(name):
 
 def state_computation(name):
     def wrapped(computation_function):
+        @wraps(computation_function)
         class C:
             def name(self):
                 return name
@@ -133,6 +136,7 @@ def state_computation(name):
 
 def computation_multi(name):
     def wrapped(computation_function):
+        @wraps(computation_function)
         class C:
             def name(self):
                 return name
@@ -150,6 +154,7 @@ def state(clz):
 
 
 def partition(fn):
+    @wraps(fn)
     class C:
         def partition(self, data):
             return fn(data)
@@ -158,6 +163,7 @@ def partition(fn):
 
 def decoder(header_length, length_fmt):
     def wrapped(decoder_function):
+        @wraps(decoder_function)
         class C:
             def header_length(self):
                 return header_length
@@ -173,6 +179,7 @@ def decoder(header_length, length_fmt):
 
 def encoder(encoder_function):
     class C:
+        @wraps(encoder_function)
         def encode(self, data):
             return encoder_function(data)
 
