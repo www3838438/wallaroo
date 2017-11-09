@@ -27,6 +27,8 @@ import tempfile
 import threading
 import time
 
+from metrics_parser import MetricsParser
+
 
 class StoppableThread(threading.Thread):
     """
@@ -793,6 +795,7 @@ BASE_COMMAND = r'''{command} \
     --resilience-dir {res_dir} \
     --name {{name}} \
     {{initializer_block}} \
+    {{join_block}} \
     --ponythreads=1 \
     --ponypinasio \
     --ponynoblock
@@ -801,6 +804,7 @@ INITIALIZER_CMD = r'''--worker-count {workers} \
     --data {host}:{data_port} \
     --external {host}:{external_port} \
     --cluster-initializer'''
+JOIN_CMD = r'''--join {host}:{control_port}'''
 def start_runners(runners, command, host, inputs, outputs, metrics_port,
                   control_port, external_port, data_port, res_dir, workers,
                   alt_block=None, alt_func=None):
@@ -822,14 +826,16 @@ def start_runners(runners, command, host, inputs, outputs, metrics_port,
             workers = workers,
             data_port = data_port,
             external_port = external_port,
-            host = host))
+            host = host),
+        join_block = '')
     if alt_func and alt_func(x):
         cmd = '''{} \
             {}'''.format(cmd, alt_block)
     runners.append(Runner(cmd_string = cmd, name = 'initializer'))
     for x in range(1, workers):
         cmd = cmd_stub.format(name = 'worker{}'.format(x),
-                              initializer_block = '')
+                              initializer_block = '',
+                              join_block = '')
         if alt_func and alt_func(x):
             cmd = '''{} \
                 {}'''.format(cmd, alt_block)
@@ -856,6 +862,59 @@ def start_runners(runners, command, host, inputs, outputs, metrics_port,
             raise PipelineTestError(
                     "Runner %d of %d has exited with an error: "
                     "\n---\n%s" % (idx+1, len(runners), r.error))
+
+
+def add_runner(runners, command, host, inputs, outputs, metrics_port,
+               control_port, external_port, data_port, res_dir, workers,
+               alt_block=None, alt_func=None):
+    cmd_stub = BASE_COMMAND.format(command = command,
+                                   host = host,
+                                   inputs = inputs,
+                                   outputs = outputs,
+                                   metrics_port = metrics_port,
+                                   control_port = control_port,
+                                   res_dir = res_dir)
+
+    # Test that the new worker *can* join
+    if len(runners) < 1:
+        raise PipelineTestError("There must be at least 1 worker to join!")
+
+    if not any(r.is_alive() for r in runners):
+        raise PipelineTestError("There must be at least 1 live worker to "
+                                "join!")
+
+    x = len(runners)
+    cmd = cmd_stub.format(name = 'worker{}'.format(x),
+                          initializer_block = '',
+                          join_block = JOIN_CMD.format(
+                                host = host,
+                                control_port = control_port))
+    if alt_func and alt_func(x):
+        cmd = '''{} \
+            {}'''.format(cmd, alt_block)
+    runner = Runner(cmd_string = cmd,
+                   name = 'worker{}'.format(x))
+    runners.append(runner)
+
+    # start the new worker
+    runner.start()
+    time.sleep(0.05)
+
+    # check the runner hasn't exited with any errors
+    try:
+        assert(runner.is_alive())
+    except Exception as err:
+        stdout, stderr = r.get_output()
+        raise PipelineTestError(
+                "Runner %d of %d has exited with an error: "
+                "\n---\n%s\n---\n%s" % (x+1, len(runners), stdout,
+                                        stderr))
+    try:
+        assert(runner.error is None)
+    except Exception as err:
+        raise PipelineTestError(
+                "Runner %d of %d has exited with an error: "
+                "\n---\n%s" % (x+1, len(runners), r.error))
 
 
 DEFAULT_SINK_EXPECT_TIMEOUT = 30
