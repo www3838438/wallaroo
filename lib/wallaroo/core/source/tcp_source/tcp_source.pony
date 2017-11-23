@@ -266,6 +266,9 @@ actor TCPSource is Producer
   fun ref current_sequence_id(): SeqId =>
     _seq_id
 
+  be receive_finished_ack(request_id: U64) =>
+    None
+
   //
   // TCP
   be _event_notify(event: AsioEventID, flags: U32, arg: U32) =>
