@@ -6,10 +6,6 @@ package wallarooapi
 //
 import "C"
 
-import(
-	"sync"
-)
-
 var Args []string = make([]string, 0)
 
 //export WallarooApiSetArgs
@@ -19,17 +15,14 @@ func WallarooApiSetArgs(argv **C.char, argc C.int) {
 	}
 }
 
-var componentDict = ComponentDict {sync.RWMutex{}, make(map[uint64]interface{}), 1}
+var componentDict = ComponentDict {make(map[uint64]interface{}), 1}
 
 type ComponentDict struct {
-	mu sync.RWMutex
 	components map[uint64]interface{}
 	nextId uint64
 }
 
 func (cd *ComponentDict) add(component interface{}) uint64 {
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
 	cd.components[cd.nextId] = component
 	lastId := cd.nextId
 	cd.nextId++
@@ -37,14 +30,10 @@ func (cd *ComponentDict) add(component interface{}) uint64 {
 }
 
 func (cd *ComponentDict) get(id uint64) interface{} {
-	cd.mu.RLock()
-	defer cd.mu.RUnlock()
 	return cd.components[id]
 }
 
 func (cd *ComponentDict) remove(id uint64) {
-	cd.mu.Lock()
-	defer cd.mu.Unlock()
 	delete(cd.components, id)
 }
 
