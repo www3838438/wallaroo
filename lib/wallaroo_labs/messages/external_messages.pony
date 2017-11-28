@@ -135,6 +135,9 @@ primitive ExternalMsgEncoder
     if (node_names.size() > 0) and (num_nodes > 0) then
       error
     end
+    if (num_nodes < 0) then
+      error
+    end
     if (node_names.size() == 0) and (num_nodes == 0) then
       _encode_shrink(_Shrink(), node_names, 1, wb)
     else
