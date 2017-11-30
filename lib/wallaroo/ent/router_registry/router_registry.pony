@@ -244,6 +244,7 @@ actor RouterRegistry
   be register_boundaries(bs: Map[String, OutgoingBoundary] val,
     bbs: Map[String, OutgoingBoundaryBuilder] val)
   =>
+    who_are_all_workers() // TODO learning kludge
     // Boundaries
     let new_boundaries = recover trn Map[String, OutgoingBoundary] end
     for (worker, boundary) in bs.pairs() do
@@ -408,6 +409,7 @@ actor RouterRegistry
   be inform_joining_worker(conn: TCPConnection, worker: String,
     local_topology: LocalTopology)
   =>
+    @printf[I32]("\n\tinform_joining_worker(): TOP, kewl worker %s\n".cstring(), worker.cstring())
     let state_blueprints =
       recover trn Map[String, PartitionRouterBlueprint] end
     for (w, r) in _partition_routers.pairs() do
@@ -880,6 +882,17 @@ actor RouterRegistry
     else
       Fail()
     end
+
+  be who_are_all_workers() =>
+    let all_workers = Array[String]
+
+    @printf[I32]("\t\twho_are_all_workers() !!!\n".cstring())
+    // NOTE: w = "initializer" | command line arg --name
+    for w in _outgoing_boundaries.keys() do
+      all_workers.push(w)
+      @printf[I32]("\t\t worker %s\n".cstring(), w.cstring())
+    end
+    all_workers.push("WHO AM I??"); @printf[I32]("\t\t worker %s\n".cstring(), "WHO am I??".cstring())
 
 class PauseBeforeMigrationNotify is TimerNotify
   let _registry: RouterRegistry
