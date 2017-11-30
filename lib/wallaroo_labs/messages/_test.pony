@@ -208,13 +208,14 @@ class iso _TestGeneralExtEncDecShrink is UnitTest
     // Use Range so that num_nodes array size 0 is tested.
     for i in Range[USize](0, node_names.size()) do
       let e1: Array[ByteSeq] val =
-        ExternalMsgEncoder.shrink(node_names.slice(0, i), 0)?
+        ExternalMsgEncoder.shrink(false, node_names.slice(0, i), 0)?
       // encode & decode are not symmetric -- we need to chop off
       // the first 4 bytes before we can decode.
       let e1': Array[U8] val = recover Help.flatten(e1).slice(4) end
 
       match ExternalMsgDecoder(e1')?
       | let extracted: ExternalShrinkMsg =>
+        h.assert_eq[Bool](false, extracted.query)
         h.assert_eq[USize](i, extracted.node_names.size())
         for j in extracted.node_names.keys() do
           h.assert_eq[String](node_names(j)?, extracted.node_names(j)?)
@@ -231,11 +232,12 @@ class iso _TestGeneralExtEncDecShrink is UnitTest
 
     // Use Range so that num_nodes = 0 is included
     for i in Range[USize](0, 4) do
-      let e1: Array[ByteSeq] val = ExternalMsgEncoder.shrink([], i)?
+      let e1: Array[ByteSeq] val = ExternalMsgEncoder.shrink(false, [], i)?
       let e1': Array[U8] val = recover Help.flatten(e1).slice(4) end
 
       match ExternalMsgDecoder(e1')?
       | let extracted: ExternalShrinkMsg =>
+        h.assert_eq[Bool](false, extracted.query)
         h.assert_eq[USize](0, extracted.node_names.size())
         if (i == 0) then
           h.assert_eq[USize](1, extracted.num_nodes) // ah-hah
@@ -245,4 +247,17 @@ class iso _TestGeneralExtEncDecShrink is UnitTest
       else
         h.assert_eq[String]("error", "case 2")
       end
+    end
+
+    // Let's now try a round trip for a query
+    let e2: Array[ByteSeq] val = ExternalMsgEncoder.shrink(true, [], 0)?
+    let e2': Array[U8] val = recover Help.flatten(e2).slice(4) end
+
+    match ExternalMsgDecoder(e2')?
+    | let extracted: ExternalShrinkMsg =>
+      h.assert_eq[Bool](true, extracted.query)
+      h.assert_eq[USize](0, extracted.node_names.size())
+      h.assert_eq[USize](0, extracted.num_nodes)
+    else
+      h.assert_eq[String]("error", "case query")
     end

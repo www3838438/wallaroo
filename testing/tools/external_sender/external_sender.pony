@@ -76,9 +76,10 @@ actor Main
         | "rotate-log" =>
           ExternalMsgEncoder.rotate_log(message)
         | "shrink" =>
-          (let node_names: Array[String], let num_nodes: USize) =
+          (let query: Bool,
+            let node_names: Array[String], let num_nodes: USize) =
             parse_shrink_cmd_line(message)?
-          ExternalMsgEncoder.shrink(node_names, num_nodes)?
+          ExternalMsgEncoder.shrink(query, node_names, num_nodes)?
         else // default to print
           ExternalMsgEncoder.print_message(message)
         end
@@ -89,13 +90,15 @@ actor Main
       @printf[I32]("Error sending.\n".cstring())
     end
 
-    fun parse_shrink_cmd_line(s: String): (Array[String], USize) ? =>
+    fun parse_shrink_cmd_line(s: String): (Bool, Array[String], USize) ? =>
       let first: U8 = s(0)?
 
-      if (first >= U8('0')) and (first <= U8('9')) then
-        return ([], s.usize()?)
+      if (first == '?') then
+        return (true, [], 0)
+      elseif (first >= U8('0')) and (first <= U8('9')) then
+        return (false, [], s.usize()?)
       else
-        return (s.split(","), 0)
+        return (false, s.split(","), 0)
       end
 
 class ExternalSenderConnectNotifier is TCPConnectionNotify

@@ -124,8 +124,8 @@ class ExternalChannelConnectNotifier is TCPConnectionNotify
             Fail()
           end
         | let m: ExternalShrinkMsg =>
-          @printf[I32]("TODO: node_names size %d num_nodes %d\n".cstring(),
-            m.node_names.size(), m.num_nodes)
+          @printf[I32]("TODO: query %s node_names size %d num_nodes %d\n".cstring(),
+            m.query.string().cstring(), m.node_names.size(), m.num_nodes)
         else
           @printf[I32](("Incoming External Message type not handled by " +
             "external channel.\n").cstring())

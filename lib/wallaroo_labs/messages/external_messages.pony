@@ -47,7 +47,7 @@ primitive ExternalMsgEncoder
     wb.write(s_array)
     wb.done()
 
-  fun _encode_shrink(id: U16, node_names: Array[String],
+  fun _encode_shrink(id: U16, query: Bool, node_names: Array[String],
     num_nodes: USize, wb: Writer): Array[ByteSeq] val
   =>
     var num_bytes: U32 = 0
@@ -56,9 +56,10 @@ primitive ExternalMsgEncoder
       num_bytes = num_bytes + 4 + U32.from[USize](n.size())
     end
 
-    wb.u32_be(1 + 2 + 4 + num_bytes + 4)
+    wb.u32_be(1 + 2 + 1 + 4 + num_bytes + 4)
     wb.u8(2) // _encode serialization type tag
     wb.u16_be(id)
+    wb.u8(if query is true then 1 else 0 end)
     wb.u32_be(node_names.size().u32())
     for n in node_names.values() do
       let n_array = n.array()
@@ -129,9 +130,12 @@ primitive ExternalMsgEncoder
   =>
     _encode(_CleanShutdown(), msg, wb)
 
-  fun shrink(node_names: Array[String] = [], num_nodes: USize = 0,
-    wb: Writer = Writer): Array[ByteSeq] val ?
+  fun shrink(query: Bool, node_names: Array[String] = [],
+    num_nodes: USize = 0, wb: Writer = Writer): Array[ByteSeq] val ?
   =>
+    if (query is true) then
+      return _encode_shrink(_Shrink(), true, [], 0, wb)
+    end
     if (node_names.size() > 0) and (num_nodes > 0) then
       error
     end
@@ -139,9 +143,9 @@ primitive ExternalMsgEncoder
       error
     end
     if (node_names.size() == 0) and (num_nodes == 0) then
-      _encode_shrink(_Shrink(), node_names, 1, wb)
+      _encode_shrink(_Shrink(), false, node_names, 1, wb)
     else
-      _encode_shrink(_Shrink(), node_names, num_nodes, wb)
+      _encode_shrink(_Shrink(), false, node_names, num_nodes, wb)
     end
 
 class BufferedExternalMsgEncoder
@@ -223,14 +227,15 @@ primitive ExternalMsgDecoder
       ExternalRotateLogFilesMsg(s)
     | (_CleanShutdown(), let s: String) =>
       ExternalCleanShutdownMsg(s)
-    | (_Shrink(), let node_names: Array[String] val, let num_nodes: USize) =>
-      ExternalShrinkMsg(node_names, num_nodes)
+    | (_Shrink(), let query: Bool,
+      let node_names: Array[String] val, let num_nodes: USize) =>
+      ExternalShrinkMsg(query, node_names, num_nodes)
     else
       error
     end
 
   fun _decode(data: Array[U8] val):
-    ((U16, String) | (U16, Array[String] val, USize)) ?
+    ((U16, String) | (U16, Bool, Array[String] val, USize)) ?
   =>
     let rb = Reader
     rb.append(data)
@@ -244,6 +249,7 @@ primitive ExternalMsgDecoder
       (id, s)
     | 2 =>
       let id = rb.u16_be()?
+      let query: Bool = if (rb.u8()? == 1) then true else false end
       let node_names = recover trn Array[String] end
       let node_names_size = USize.from[U32](rb.u32_be()?)
 
@@ -255,7 +261,7 @@ primitive ExternalMsgDecoder
       end
       let num_nodes = USize.from[U32](rb.u32_be()?)
 
-      (id, consume node_names, num_nodes)
+      (id, query, consume node_names, num_nodes)
     else
       error
     end
@@ -325,9 +331,12 @@ class val ExternalCleanShutdownMsg is ExternalMsg
     msg = m
 
 class val ExternalShrinkMsg is ExternalMsg
+  let query: Bool
   let node_names: Array[String] val
   let num_nodes: USize
 
-  new val create(node_names': Array[String] val, num_nodes': USize) =>
+  new val create(query': Bool,
+    node_names': Array[String] val, num_nodes': USize) =>
+    query = query'
     node_names = node_names'
     num_nodes = num_nodes'
