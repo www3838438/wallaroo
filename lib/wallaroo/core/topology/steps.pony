@@ -402,7 +402,7 @@ actor Step is (Producer & Consumer)
     end
     _upstreams.unset(producer)
 
-  be request_finished_ack(upstream_request_id: U64, upstream_producer: Producer) =>
+  be request_finished_ack(upstream_request_id: U64, upstream_producer: FinishedAckRequester) =>
     let ack_waiter: FinishedAckWaiter = ack_waiter.create(upstream_request_id,
       upstream_producer)
     for r in _routes.values() do

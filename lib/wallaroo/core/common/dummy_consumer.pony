@@ -31,7 +31,7 @@ actor DummyConsumer is Consumer
   be unregister_producer(producer: Producer) =>
     None
 
-  be request_finished_ack(request_id: U64, producer: Producer) =>
+  be request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     producer.receive_finished_ack(request_id)
 
   be run[D: Any val](metric_name: String, pipeline_time_spent: U64, data: D,

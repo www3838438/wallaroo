@@ -19,16 +19,28 @@ Copyright 2017 The Wallaroo Authors.
 use "collections"
 use "wallaroo_labs/mort"
 
+interface CustomAction
+  fun ref apply()
+
 class FinishedAckWaiter
   let upstream_request_id: U64
-  let _upstream_producer: Producer
+  let _upstream_producer: FinishedAckRequester
   let _idgen: GenericRequestIdGenerator = _idgen.create()
   var _awaiting_finished_ack_from: Array[U64] = _awaiting_finished_ack_from.create()
+  var _custom_action: (CustomAction ref | None) = None
 
-  new create(upstream_request_id': U64, upstream_producer: Producer)
+  new create(upstream_request_id': U64, upstream_producer: FinishedAckRequester)
   =>
     upstream_request_id = upstream_request_id'
     _upstream_producer = upstream_producer
+
+  fun ref set_custom_action(custom_action: CustomAction) =>
+    _custom_action = custom_action
+
+  fun ref run_custom_action() =>
+    match _custom_action
+    | let ca: CustomAction => ca()
+    end
 
   fun ref add_consumer_request(): U64 =>
     let request_id: U64 = _idgen()

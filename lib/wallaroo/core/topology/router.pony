@@ -38,7 +38,7 @@ trait val Router
   fun routes(): Array[Consumer] val
   fun routes_not_in(router: Router): Array[Consumer] val
 
-  fun request_finished_ack(request_id: U64, producer: Producer)
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester)
 
 class val EmptyRouter is Router
   fun route[D: Any val](metric_name: String, pipeline_time_spent: U64, data: D,
@@ -53,7 +53,7 @@ class val EmptyRouter is Router
   fun routes_not_in(router: Router): Array[Consumer] val =>
     recover Array[Consumer] end
 
-  fun request_finished_ack(request_id: U64, producer: Producer) =>
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     producer.receive_finished_ack(request_id)
 
 class val DirectRouter is Router
@@ -107,7 +107,7 @@ class val DirectRouter is Router
       false
     end
 
-  fun request_finished_ack(request_id: U64, producer: Producer) =>
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     _target.request_finished_ack(request_id, producer)
 
 class val ProxyRouter is (Router & Equatable[ProxyRouter])
@@ -202,7 +202,7 @@ class val ProxyRouter is (Router & Equatable[ProxyRouter])
       (_target is that._target) and
       (_target_proxy_address == that._target_proxy_address)
 
-  fun request_finished_ack(request_id: U64, producer: Producer) =>
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     _target.request_finished_ack(request_id, producer)
 
 // An OmniRouter is a router that can route a message to any Consumer in the
@@ -830,7 +830,7 @@ class val DataRouter is Equatable[DataRouter]
       Fail()
     end
 
-  fun request_finished_ack(request_id: U64, producer: Producer) =>
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     for r in _data_routes.values() do
       //TODO: track these with an AckWaiter and a fake producer?
       r.request_finished_ack(request_id, producer)
@@ -851,7 +851,7 @@ trait val PartitionRouter is (Router & Equatable[PartitionRouter])
     PartitionRouter
   fun blueprint(): PartitionRouterBlueprint
   fun route_builder(): RouteBuilder
-  fun request_finished_ack(request_id: U64, producer: Producer)
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester)
 
 trait val AugmentablePartitionRouter[Key: (Hashable val & Equatable[Key] val)]
   is PartitionRouter
@@ -1250,7 +1250,7 @@ class val LocalPartitionRouter[In: Any val,
       false
     end
  
-  fun request_finished_ack(request_id: U64, producer: Producer) =>
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     for step in _local_map.values() do
       //TODO: this needs to have a producer belonging to the router
       step.request_finished_ack(request_id, producer)
@@ -1512,7 +1512,7 @@ class val LocalStatelessPartitionRouter is StatelessPartitionRouter
       false
     end
  
-  fun request_finished_ack(request_id: U64, producer: Producer) =>
+  fun request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     for rs in _partition_routes.values() do
       //TODO: use AckWaiter and new ids, with dummy producer
       match rs

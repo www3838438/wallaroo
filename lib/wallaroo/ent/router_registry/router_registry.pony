@@ -27,7 +27,7 @@ use "wallaroo/ent/recovery"
 use "wallaroo_labs/mort"
 
 
-actor RouterRegistry
+actor RouterRegistry is FinishedAckRequester
   let _auth: AmbientAuth
   let _data_receivers: DataReceivers
   let _worker_name: String
@@ -43,6 +43,8 @@ actor RouterRegistry
   var _omni_router: (OmniRouter | None) = None
 
   var _application_ready_to_work: Bool = false
+
+  let _finished_ack_waiter: FinishedAckWaiter = _finished_ack_waiter.create(0, this)
 
   ////////////////
   // Subscribers
@@ -469,11 +471,7 @@ actor RouterRegistry
     _stop_the_world_in_process = true
     _stop_all_local()
     _stop_the_world_for_log_rotation()
-    // await acks?
-    let timers = Timers
-    let timer = Timer(PauseBeforeLogRotationNotify(this),
-      _stop_the_world_pause)
-    timers(consume timer)
+    _request_finished_acks(LogRotationAction(this))
 
   be begin_log_rotation() =>
     """
@@ -507,7 +505,8 @@ actor RouterRegistry
     @printf[I32]("~~~Stopping message processing for log rotation.~~~\n"
       .cstring())
     _mute_request(_worker_name)
-    _connections.stop_the_world()
+    let request_id = _finished_ack_waiter.add_consumer_request()
+    _connections.stop_the_world(request_id, this)
 
   //////////////
   // NEW WORKER PARTITION MIGRATION
@@ -520,10 +519,7 @@ actor RouterRegistry
     """
     _stop_the_world_in_process = true
     _stop_the_world(new_worker)
-    let timers = Timers
-    let timer = Timer(PauseBeforeMigrationNotify(this, new_worker),
-      _stop_the_world_pause)
-    timers(consume timer)
+    _request_finished_acks(MigrationAction(this, new_worker))
 
   fun ref _stop_the_world(new_worker: String) =>
     """
@@ -534,7 +530,8 @@ actor RouterRegistry
       .cstring())
     _migration_target_ack_list.set(new_worker)
     _mute_request(_worker_name)
-    _connections.stop_the_world(recover [new_worker] end)
+    let request_id = _finished_ack_waiter.add_consumer_request()
+    _connections.stop_the_world(request_id, this, recover [new_worker] end)
 
   be resume_the_world() =>
     _resume_the_world()
@@ -655,6 +652,25 @@ actor RouterRegistry
         .cstring(), target.cstring())
       _connections.request_cluster_unmute()
       _unmute_request(_worker_name)
+    end
+
+  fun ref _request_finished_acks(custom_action: CustomAction) =>
+    """
+    Get finished acks from all sources
+    """
+    //TODO: request finished acks on remote workers
+    ifdef debug then
+      @printf[I32]("RouterRegistry requesting finished acks for local sources.\n".cstring())
+    end
+    for source in _sources.values() do
+      let request_id = _finished_ack_waiter.add_consumer_request()
+      source.stop_the_world(request_id, this)
+    end
+
+  be receive_finished_ack(request_id: U64) =>
+    _finished_ack_waiter.unmark_consumer_request(request_id)
+    if _finished_ack_waiter.should_send_upstream() then
+      _finished_ack_waiter.run_custom_action()
     end
 
   fun _stop_all_local() =>
@@ -881,7 +897,7 @@ actor RouterRegistry
       Fail()
     end
 
-class PauseBeforeMigrationNotify is TimerNotify
+class MigrationAction is CustomAction
   let _registry: RouterRegistry
   let _target_worker: String
 
@@ -889,17 +905,17 @@ class PauseBeforeMigrationNotify is TimerNotify
     _registry = registry
     _target_worker = target_worker
 
-  fun ref apply(timer: Timer, count: U64): Bool =>
+  fun ref apply() =>
     _registry.begin_migration(_target_worker)
     false
 
-class PauseBeforeLogRotationNotify is TimerNotify
+class LogRotationAction is CustomAction
   let _registry: RouterRegistry
 
   new iso create(registry: RouterRegistry) =>
     _registry = registry
 
-  fun ref apply(timer: Timer, count: U64): Bool =>
+  fun ref apply() =>
     _registry.begin_log_rotation()
     false
 

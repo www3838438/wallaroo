@@ -299,7 +299,7 @@ actor TCPSink is Consumer
 
     _upstreams.unset(producer)
 
-  be request_finished_ack(request_id: U64, producer: Producer) =>
+  be request_finished_ack(request_id: U64, producer: FinishedAckRequester) =>
     producer.receive_finished_ack(request_id)
 
   //
