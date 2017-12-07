@@ -891,6 +891,7 @@ actor OutgoingBoundary is Consumer
     _maybe_mute_or_unmute_upstreams()
 
   fun ref _apply_backpressure() =>
+    @printf[I32]("NNN _apply_backpressure\n".cstring())
     if not _throttled then
       _throttled = true
       _writeable = false
@@ -903,6 +904,7 @@ actor OutgoingBoundary is Consumer
     end
 
   fun ref _release_backpressure() =>
+    @printf[I32]("NNN _release_backpressure\n".cstring())
     if _throttled then
       _throttled = false
       _notify.unthrottled(this)
@@ -910,6 +912,7 @@ actor OutgoingBoundary is Consumer
     end
 
   fun ref _maybe_mute_or_unmute_upstreams() =>
+    @printf[I32]("NNN _maybe_mute_or_unmute_upstreams\n".cstring())
     if _mute_outstanding then
       if _can_send() then
         _unmute_upstreams()
@@ -921,12 +924,14 @@ actor OutgoingBoundary is Consumer
     end
 
   fun ref _mute_upstreams() =>
+    @printf[I32]("NNN _mute_upstreams\n".cstring())
     for u in _upstreams.values() do
       u.mute(this)
     end
     _mute_outstanding = true
 
   fun ref _unmute_upstreams() =>
+    @printf[I32]("NNN _unmute_upstreams\n".cstring())
     for u in _upstreams.values() do
       u.unmute(this)
     end

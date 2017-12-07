@@ -95,6 +95,8 @@ actor TCPSource is Producer
   // Producer (Resilience)
   var _seq_id: SeqId = 1 // 0 is reserved for "not seen yet"
 
+  var _mcount: USize = 0
+
   new _accept(listen: TCPSourceListener, notify: TCPSourceNotify iso,
     routes: Array[Consumer] val, route_builder: RouteBuilder,
     outgoing_boundary_builders: Map[String, OutgoingBoundaryBuilder] val,
@@ -518,12 +520,17 @@ actor TCPSource is Producer
     _read_buf.undefined(size)
 
   fun ref _mute() =>
+    @printf[I32]("NNN _mute(): _mcount: %s\n".cstring(), _mcount.string().cstring())
+    _mcount = _mcount + 1
     ifdef debug then
       @printf[I32]("Muting TCPSource\n".cstring())
     end
     _muted = true
 
   fun ref _unmute() =>
+    @printf[I32]("NNN _unmute(): _mcount: %s\n".cstring(),
+      _mcount.string().cstring())
+    _mcount = _mcount - 1
     ifdef debug then
       @printf[I32]("Unmuting TCPSource\n".cstring())
     end
@@ -537,7 +544,11 @@ actor TCPSource is Producer
     _mute()
 
   be unmute(c: Consumer) =>
+    @printf[I32]("NNN be unmute(): _mcount: %s\tmuted_downstream: %s\n".cstring(),
+      _mcount.string().cstring(), _muted_downstream.size().string().cstring())
     _muted_downstream.unset(c)
+    @printf[I32]("NNN be unmuted(): muted_downstream: %s\n".cstring(),
+      _muted_downstream.size().string().cstring())
 
     if _muted_downstream.size() == 0 then
       _unmute()

@@ -689,7 +689,7 @@ class RunnerReadyChecker(StoppableThread):
 class RunnerChecker(StoppableThread):
     __base_name__ = 'RunnerChecker'
 
-    def __init__(self, runner, patterns, timeout=30):
+    def __init__(self, runner, patterns, timeout=30, ordered=False):
         super(RunnerChecker, self).__init__()
         self.name = self.__base_name__
         self.runner_name = runner.name
@@ -701,6 +701,7 @@ class RunnerChecker(StoppableThread):
         else:
             self.patterns = [pattern]
         self.compiled = [re.compile(p) for p in patterns]
+        self.ordered = ordered
 
     def run(self):
         with open(self._path, 'rb') as r:
@@ -718,7 +719,8 @@ class RunnerChecker(StoppableThread):
                         logging.debug('Pattern %r found in runner STDOUT.'
                                       % match.re.pattern)
                         self.compiled.pop(0)
-                        last_match = 0
+                        if not self.ordered:
+                            last_match = 0
                         if self.compiled:
                             continue
                         self.stop()
