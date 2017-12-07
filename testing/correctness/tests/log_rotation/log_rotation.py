@@ -34,6 +34,9 @@ import time
 import struct
 
 
+import logging, sys
+logging.basicConfig(level=logging.DEBUG, stream=sys.stdout)
+
 log_rotated_patterns = ['Starting event log rotation\.',
             '~~~Stopping message processing for log rotation\.~~~',
             'Snapshotting \d+ steps to new log file\.',
@@ -284,6 +287,10 @@ def _test_log_rotation_external_trigger_recovery(command):
         if log_rotated_checker.error:
             raise log_rotated_checker.error
 
+
+
+        time.sleep(0.01)
+
         # stop worker in a non-graceful fashion so that recovery files
         # aren't removed
         runners[-1].kill()
@@ -372,7 +379,15 @@ def _test_log_rotation_external_trigger_recovery(command):
                                     stdout, stderr))
     finally:
         for r in runners:
+            print '==='
+            print r.name
+            print '---'
+            print r.get_output()[0]
+            print
+
+        for r in runners:
             r.stop()
+    assert(0)
 
 
 #def test_log_rotation_file_size_trigger_no_recovery_pony():
@@ -513,9 +528,9 @@ def _test_log_rotation_file_size_trigger_no_recovery(command):
             r.stop()
 
 
-def test_log_rotation_file_size_trigger_recovery_pony():
-    command = 'sequence_window'
-    _test_log_rotation_file_size_trigger_recovery(command)
+#def test_log_rotation_file_size_trigger_recovery_pony():
+#    command = 'sequence_window'
+#    _test_log_rotation_file_size_trigger_recovery(command)
 
 
 #def test_log_rotation_file_size_trigger_recovery_machida():
