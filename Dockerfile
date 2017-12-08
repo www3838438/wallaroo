@@ -64,11 +64,8 @@ COPY docker/environment-setup.sh /wallaroo-src/
 
 WORKDIR /wallaroo-src
 
-RUN make clean-monitoring_hub-apps-metrics_reporter_ui && \
-    make arch=amd64 release-monitoring_hub-apps-metrics_reporter_ui && \
-    mkdir /metrics_ui-src && \
-    cp -r /wallaroo-src/monitoring_hub/apps/metrics_reporter_ui/rel/metrics_reporter_ui /metrics_ui-src && \
-    make clean-monitoring_hub-apps-metrics_reporter_ui
+RUN mkdir /metrics_ui-src && \
+    cp -r /wallaroo-src/monitoring_hub/apps/metrics_reporter_ui/rel/metrics_reporter_ui /metrics_ui-src
 
 RUN make clean && \
     make target_cpu=x86-64 build-giles-all && \

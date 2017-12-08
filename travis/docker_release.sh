@@ -36,6 +36,7 @@ then
 		exit 0
 	else
 		docker login -u wallaroolabs -p $DOCKER_PASSWORD $wallaroo_docker_repo_host
+		make release-monitoring_hub-apps-metrics_reporter_ui
 		docker build -t $wallaroo_docker_image_path .
 		docker push $wallaroo_docker_image_path
 		echo "Built and pushed image $wallaroo_docker_image_path successfully."
