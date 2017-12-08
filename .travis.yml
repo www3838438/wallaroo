@@ -12,6 +12,7 @@ branches:
     - release
     - /^release-(\d).(\d).(\d)-rc(\d)+$/
     - /^release-(\d).(\d).(\d)$/
+    - update-docker-release-process
 
 dist: trusty
 sudo: required
