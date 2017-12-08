@@ -288,9 +288,6 @@ def _test_log_rotation_external_trigger_recovery(command):
             raise log_rotated_checker.error
 
 
-
-        time.sleep(0.01)
-
         # stop worker in a non-graceful fashion so that recovery files
         # aren't removed
         runners[-1].kill()
@@ -387,6 +384,8 @@ def _test_log_rotation_external_trigger_recovery(command):
 
         for r in runners:
             r.stop()
+    print '---'
+    print 'Failing on purpose to show the output here'
     assert(0)
 
 
