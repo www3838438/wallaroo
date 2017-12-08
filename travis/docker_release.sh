@@ -3,7 +3,7 @@ set -x
 set -o errexit
 set -o nounset
 
-if [[ "$TRAVIS_BRANCH" == "release" || "$TRAVIS_BRANCH" == *"release-"* ]]
+if [[ "$TRAVIS_BRANCH" == "release" || "$TRAVIS_BRANCH" == *"release-"* || "$TRAVIS_BRANCH" == "update-docker-release-process" ]]
 then
 	echo "Building Wallaroo docker image and pushing to Bintray..."
 	## Sets Wallaroo Docker repo host to Bintray repo.
@@ -15,6 +15,11 @@ then
 		wallaroo_docker_image_repo=release
 		docker_image_tag=$version
 	elif [[ "$TRAVIS_BRANCH" == *"release-"* && "$TRAVIS_PULL_REQUEST" == "false" ]]
+	then
+		## Sets repo to dev for Wallaroo Docker image
+		wallaroo_docker_image_repo=dev
+		docker_image_tag=$(git describe --tags --always)
+	elif [[ "$TRAVIS_BRANCH" == "update-docker-release-process" && "$TRAVIS_PULL_REQUEST" == "false" ]]
 	then
 		## Sets repo to dev for Wallaroo Docker image
 		wallaroo_docker_image_repo=dev
