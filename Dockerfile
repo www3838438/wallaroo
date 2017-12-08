@@ -62,10 +62,13 @@ COPY SUPPORT.md /wallaroo-src/
 COPY utils /wallaroo-src/utils/
 COPY docker/environment-setup.sh /wallaroo-src/
 
-RUN mkdir /metrics_ui-src && \
-    cp -r /wallaroo-src/monitoring_hub/apps/metrics_reporter_ui/rel/metrics_reporter_ui /metrics_ui-src
-
 WORKDIR /wallaroo-src
+
+RUN make clean-monitoring_hub-apps-metrics_reporter_ui && \
+    make release-monitoring_hub-apps-metrics_reporter_ui && \
+    mkdir /metrics_ui-src && \
+    cp -r /wallaroo-src/monitoring_hub/apps/metrics_reporter_ui/rel/metrics_reporter_ui /metrics_ui-src && \
+    make clean-monitoring_hub-apps-metrics_reporter_ui
 
 RUN make clean && \
     make target_cpu=x86-64 build-giles-all && \
@@ -78,7 +81,6 @@ RUN make clean && \
     cp utils/cluster_shutdown/cluster_shutdown /wallaroo-bin/cluster_shutdown && \
     cp environment-setup.sh /wallaroo-bin && \
     make clean
-
 
 VOLUME /src/wallaroo
 
